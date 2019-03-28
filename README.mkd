@@ -1,0 +1,36 @@
+# Notes on various tools in my toolbox
+
+Over the past couple of decades, I have used several Unix tools, and have
+amassed a pretty good collection of notes, tips, and tricks on many of them.
+I've been meaning to put them all out on github or something, but sadly, much
+of my material is probably dated, or at least needs to be checked.  At the
+very least, it needs a good cleanup before I can do that.
+
+A bit of a catch-22 there.
+
+Instead, I decided to start with something I've only just begun using, and add
+other stuff later.
+
+## vifm -- file manager with vim-like key bindings
+
+I had been somewhat happy with the file manager I had been using for some
+years, having learnt to live with it's somewhat baroque configuration
+requirements (involving 4 different files -- 2 custom syntaxes, 1 shell, and 1
+python!)
+
+<!--
+
+Plus the ominous warnings saying:
+
+    Please note that configuration files may change as ranger evolves.  It's
+    completely up to you to keep them up to date.
+
+which, while not far from the truth for *any* app, are simply worse here
+because of the 4 different formats!
+
+-->
+
+But the urge to move on was there, and one weekend I started looking around,
+eventually finding [vifm](http://https://vifm.info).
+
+It has some really nice features that I explore in [vifm.mkd].
