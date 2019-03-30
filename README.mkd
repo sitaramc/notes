@@ -31,7 +31,7 @@ because of the 4 different formats!
 -->
 
 But the urge to move on was there, and one weekend I started looking around,
-eventually finding [vifm](http://https://vifm.info).
+eventually finding [vifm](https://vifm.info).
 
 It has some really nice features that I explore in
 [vifm.mkd](../master/vifm.mkd).
