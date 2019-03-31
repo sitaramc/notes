@@ -36,6 +36,11 @@ the author's own vifmrc!)
     Very, very, cool, especially when you consider that this is something you
     simply cannot manually work-around if the fm does not support it!
 
+    (There are a few exceptions; for instance see opening all the results of a
+    `:grep` in a [vim quickfix
+    list](https://q2a.vifm.info/446/vifm-m_l-opens-tmux-new-window-but-vfm-m_v-does-not),
+    for good reasons, so just be aware of them and watch your tmux statusbar.)
+
 *   **custom commands** are ***so much simpler*** than in my old file manager,
     I'm adding it here even though this should be a no-brainer for *any* fm.
 
