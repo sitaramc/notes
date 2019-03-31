@@ -41,6 +41,21 @@ the author's own vifmrc!)
     list](https://q2a.vifm.info/446/vifm-m_l-opens-tmux-new-window-but-vfm-m_v-does-not),
     for good reasons, so just be aware of them and watch your tmux statusbar.)
 
+*   **synchronised registers**: For many things that do not require permanent
+    files, I tend to open a temporary directory (see
+    [cli-tips.mkd](cli-tips.mkd)).  I sometimes have several tmux windows with
+    short-lived files in them, and occasionally I need to move or copy files
+    between them.  Granted, this is rare, but when it happens, it's a real
+    pain and a major slowdown because those temporary pathnames are quite
+    random!
+
+    But by adding `set syncregs=foo` in my vifmrc, *all* my vifm sessions are
+    automatically synchronised as far as register contents go.  This makes it
+    trivial to copy or move files from one session to another.  Open up vifm
+    in both places, hit `yy` on the source files, switch to the other tmux
+    sessions, and hit either `p` (for copy) or `P` (upperase P, for move).
+    Done.
+
 *   **custom commands** are ***so much simpler*** than in my old file manager,
     I'm adding it here even though this should be a no-brainer for *any* fm.
 
