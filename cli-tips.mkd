@@ -1,0 +1,44 @@
+# placeholder for cli-tips
+
+## files and directories
+
+### short-lived files
+
+For some strange reason, I prefer not to create short-lived files on the hard
+disk, preferring to create them in a `tmpfs` instead.  This uses only RAM,
+which I have plenty of.
+
+Here are some example scenarios where I do this:
+
+-   clone a repo, make a change, commit, push, and exit: I work from multiple
+    machines, so I don't necessarily care to keep a copy of every repo I work
+    on, on every machine I work on.  For simple and quick changes this works
+    out much better.
+
+-   when checking out some software, clone the repo, go through the git logs,
+    etc., using various tools, before deciding if I want to use it.
+
+-   if I'm watching a youtube video, especially recorded conference talks
+    etc., I often need to navigate back and forth to revisit something, etc.
+    This is easier with a downloaded video played by a local player than on
+    the browser, but you really don't want to keep that video once you're
+    done.
+
+Anyway, for all these uses, I have a simple alias which, shorn of some detail,
+boils down to this:
+
+    ```sh
+    tmp () (
+        export od=$PWD
+        export tmp=$(mktemp -d)
+        trap "rm -rf $tmp" 0
+        cd $tmp
+        $SHELL -l
+    )
+    ```
+
+Just run `tmp`, and a sub-shell will open up in a temporary directory, with
+`$od` set to the directory where you ran that command so you can copy stuff
+if you need to, and do things.  (With [vifm.mkd](vifm.mkd) and it's
+"synchronised registers", there are other ways of getting files into and out
+of this temporary directory without having to type in random paths)
