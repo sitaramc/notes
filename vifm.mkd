@@ -49,12 +49,18 @@ the author's own vifmrc!)
     pain and a major slowdown because those temporary pathnames are quite
     random!
 
-    But by adding `set syncregs=foo` in my vifmrc, *all* my vifm sessions are
-    automatically synchronised as far as register contents go.  This makes it
-    trivial to copy or move files from one session to another.  Open up vifm
-    in both places, hit `yy` on the source files, switch to the other tmux
-    sessions, and hit either `p` (for copy) or `P` (upperase P, for move).
-    Done.
+    But by using the `syncregs` setting in my vifmrc, *all* my vifm sessions
+    are automatically synchronised as far as register contents go.  This makes
+    it trivial to copy or move files from one session to another.  Open up
+    vifm in both places, hit `yy` on the source files, switch to the other
+    tmux sessions, and hit either `p` (for copy) or `P` (upperase P, for
+    move).  Done.
+
+    I like this so much that this is the default on all my users's vifmrcs.
+    While you cannot use `$USER` directly in the setting, vifm provides (just
+    like vim) a way around that:
+
+        execute "set syncregs=".$USER
 
 *   **custom commands** are ***so much simpler*** than in my old file manager,
     I'm adding it here even though this should be a no-brainer for *any* fm.
