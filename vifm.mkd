@@ -70,7 +70,7 @@ the author's own vifmrc!)
 
     (You can look up `%c`, `%C`, `%a` and all the others in the section on
     ["Command Macros"][cm].  (Hint: ignore the second column, which has macros
-    starting with `%"`; those appear to be for Windows, as far as I can tell).
+    starting with `%"`; those are for Windows).
 
     [cm]:https://vifm.info/vimdoc.shtml#vifm-macros "https://vifm.info/vimdoc.shtml#vifm-macros"
 
@@ -97,27 +97,30 @@ the author's own vifmrc!)
     We all know that space is limited, so tying what is displayed next to the
     name, to what is chosen as the sort field, is just brilliant!
 
-*   **marks** that get automatically saved (I don't remember if this was the
-    default or not, but I have it set in my vifmrc).  TBH, I suspect many file
-    managers have this; I know my old one did.
+*   **marks** that get automatically saved.  TBH, I suspect many file managers
+    have this; I know my old one did.
 
 ## things you'll see right away
 
-*   2-pane file manager, a la midnight commander.  You can have multiple tabs,
-    each with its own 2 panes, but I don't use the tabs; two panes is good
-    enough for me, and if I need more I open up another tmux window.
+*   2-pane file manager, a la midnight commander.  You can also make it *show*
+    just one pane; I do that sometimes when the filenames are too long and I
+    need to see them in full.  Note that the other pane is still there, it's
+    just not shown -- if you hit `<Tab>` you can still switch between them.
 
-    However, if you are used to [Miller Columns][mc], you can also use those,
+    Also, if you are used to [Miller Columns][mc], you can also use those,
     though I have not used them much with vifm.
+
+    You can also have tabs, but I've never been much of a tab user, even in
+    vim, so I can't say much about them.  I just know that Vifm lets you have
+    tabs in panes, as well as panes in tabs, which should cater to all tastes!
+    (There are some screenshots on the official website.)
 
     [mc]:https://en.wikipedia.org/wiki/Miller_columns "https://en.wikipedia.org/wiki/Miller_columns"
 
-    (**pain point, easily fixable**: if you're used to the file manager always
-    starting in the current directory, instead of the directory you last
-    visited, you *will* need to set the `vifminfo` option in vifmrc to a set
-    of values that does *not* include `savedirs`.  Having to read up the
-    manual to get *that* out of the way even before I had started exploring it
-    properly was a downer, but I'm glad I persisted!)
+    If you're used to the file manager always starting in the current
+    directory, instead of the directory you last visited, set the `vifminfo`
+    option in vifmrc to a list of values that does *not* include `savedirs`
+    (the default includes it).
 
 *   To see **hidden files**, add `set dotfiles` to vifmrc.  You can always
     toggle them off with `za` if you wish.
@@ -405,8 +408,8 @@ window.
 
 Here's where the fun starts.  Hit `b`, and these files will be loaded in the
 active pane as a **custom view**.  You can preview those files, delete them,
-edit them, whatever.  When you're done, type `:regular` (or you can setup a
-mapping for that) to come back to the regular view.
+edit them, whatever.  When you're done, type `gh` to come back to the regular
+view.
 
 ### finding the latest, or largest, files
 
@@ -476,12 +479,14 @@ What this does is open up a result window with all the matches.  You can:
 *   hit `v` and all the **matches** will be loaded into a **vim quickfix
     list**.  From there it's between you and your mad vim skills!
 
-    (For some reason this last bit does not open a new tmux window.)
+    (As mentioned earlier, this is one of those cases where it's very hard to
+    open this quickfix list in a new tmux window, so the current window will
+    be used).
 
 ## external commands
 
 *   `:!command` runs the command, and when it is done, comes back to vifm
-    pane.
+    pane (it pauses only if the exit code was non-zero).
 
 *   `:!!command` runs the command, and pauses for you to hit enter when it is
     done
@@ -521,3 +526,5 @@ What this does is open up a result window with all the matches.  You can:
     `:invert s`, then `zf`.  A suitable mapping can always be made if this
     gets frequently used.
 
+    (Side note: the behaviour of `:filter` can be switched by dropping the `f`
+    flag from `cpoptions`, should you wish to.)
