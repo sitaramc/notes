@@ -56,11 +56,8 @@ the author's own vifmrc!)
     tmux sessions, and hit either `p` (for copy) or `P` (upperase P, for
     move).  Done.
 
-    I like this so much that this is the default on all my users's vifmrcs.
-    While you cannot use `$USER` directly in the setting, vifm provides (just
-    like vim) a way around that:
-
-        execute "set syncregs=".$USER
+    I like this so much that my users's vifmrcs have `let &syncregs = $USER`
+    in them.
 
 *   **custom commands** are ***so much simpler*** than in my old file manager,
     I'm adding it here even though this should be a no-brainer for *any* fm.
