@@ -270,10 +270,6 @@ previews for **directories** also to have some custom external command, and
 this covers both (after all, git log works fine on both files and
 directories).
 
-(I must say, though, that vifm's rendering sometimes does not appear to clear
-the screen properly.  I suspect if I leave out the "--color" things may
-improve, but YMMV).
-
 ----
 
 Coming back to the boring stuff, here are a few samples from my vifmrc.  Note
