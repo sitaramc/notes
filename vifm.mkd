@@ -427,7 +427,7 @@ N, or most recently committed N, files.
     command! xc :set viewcolumns=*{name}..,24{mtime}| zzzInternalXC %a
     command! xm :set viewcolumns=*{name}..,24{mtime}| zzzInternalXM %a
     command! xs :set viewcolumns=*{name}..,8{size}|   zzzInternalXS %a
-    command! zzzInternalXC git log --name-only --format=%%n | perl -lne 'print if /./ and -f and not $seen{$_}++' | head -%a %U
+    command! zzzInternalXC git log --name-only --format=%%n -- %d| CDUP=`git rev-parse --show-cdup` perl -lne 'print if /./ and s(^)($ENV{CDUP}) and -f and not $seen{$_}++' | head -%a %U
     command! zzzInternalXM find -type f -print0 | xargs -0 ls -tr | tail -%a | tac %U
     command! zzzInternalXS find -type f -print0 | xargs -0 ls -Sr | tail -%a | tac %U
     " the 'zzz' is so they will show up last when I hit ':<Tab>'
