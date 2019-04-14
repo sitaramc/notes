@@ -42,3 +42,43 @@ Just run `tmp`, and a sub-shell will open up in a temporary directory, with
 if you need to, and do things.  (With [vifm.mkd](vifm.mkd) and it's
 "synchronised registers", there are other ways of getting files into and out
 of this temporary directory without having to type in random paths)
+
+### progress bar while copying files
+
+One of the programs I have had in my `~/bin` for some months is
+[`fxp`](fxp.pl).  (I'm terrible at names, by the way, so that's supposed to
+mean "file transfer with progress"!)
+
+It's basically just a wrapper around `rsync -avP`, to capture and mangle its
+output.  Even if you don't know perl, you can quickly eye-ball it and see
+that's all it is doing.  In particular, it is NOT attempting to actually do
+any file operations.
+
+I think that's important.  File copy is a critical operation, and one must use
+only battle-tested code to do this.
+
+Today someone posted
+[this](https://www.reddit.com/r/commandline/comments/bcuagx/announcing_ppcp_a_tool_for_copying_files_and_dirs/)
+to reddit, which -- as far as I can tell from the code -- does all the file
+copying itself.
+
+Now, I'm a huge fan of rust (purely as a user of rust programs other people
+write; I don't write rust myself), but I'm not comfortable replacing
+fundamental parts of the ecosystem with new, not-yet-field-tested-for-years,
+code.  Using ripgrep instead of grep is one thing, using something else
+instead of `cp` or `rsync` is quite another.
+
+Anyway, use `fxp` as if it was spelt `rsync -avP`, and be amazed at the
+succinct, 2-line, progress you see!
+
+Note: the ppcp linked above apparently tells you the absolute total, meaning
+it does a pre-scan.  Rsync does not do that, and in fact even the *number* of
+files is only a guess at the beginning (`man rsync` and look for `ir-chk` for
+more on this).  So if you want the complete picture *up-front*, this won't
+work for you.
+
+However, I consider the rsync advantage for remote copying (you know, that
+whole [Andrew Tridgell's PhD
+thesis](https://rsync.samba.org/~tridge/phd_thesis.pdf) thing!) to be well
+worth the loss of accurate estimation.
+
