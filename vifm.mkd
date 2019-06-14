@@ -419,7 +419,7 @@ active pane as a **custom view**.  You can preview those files, delete them,
 edit them, whatever.  When you're done, type `gh` to come back to the regular
 view.
 
-### finding the latest, or largest, files
+### finding the "N" most recently committed/modified or largest files
 
 I mentioned this up at the top, but here's how you get the largest N, newest
 N, or most recently committed N, files.
@@ -442,6 +442,10 @@ However, the [`%U`][pc_U] is what makes all this work: it basically takes the
 command output and creates a "custom view" out of it!  (I use `%U` instead of
 `%u` because I don't want vifm to needlessly sort it on some other key, when
 it's already sorted!)
+
+(Due to an odd quirk of the `tail` command being quite happy to be run as
+`tail -`, without a number, you can also say `:xc` etc., and it is effectively
+treated as `:xc 10`).
 
 [sf]:https://github.com/sitaramc/active-aliases/blob/master/examples/sf "https://github.com/sitaramc/active-aliases/blob/master/examples/sf"
 [fprg]:https://vifm.info/vimdoc.shtml#vifm-%27findprg%27 "https://vifm.info/vimdoc.shtml#vifm-%27findprg%27"
@@ -504,6 +508,11 @@ What this does is open up a result window with all the matches.  You can:
 
 *   **file filters**: I find this tanatlisingly useful, but it is somewhat
     confusing.
+
+    [Update 2019-06-14 -- although I don't see a release tag yet, so I won't
+    use it, looking at the dev repo shows there is nomenclature change
+    happening in this regard.  I have hopes that once we get to 0.11 this
+    section can be removed or at least changed substantially]
 
     There are actually 3 kinds of filters.  I suggest playing with it, or
     sticking to one type for now.  Just to share my confusion, here's what
