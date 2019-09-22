@@ -1,0 +1,95 @@
+#!/bin/bash
+
+# take output of either "tar -tvf" or "find ... -ls" via stdin, summarise.
+
+# stdin: as described above, or if not a pipe, will run `find -ls`
+[[ -t 0 ]] && { find -ls | $0 "$@"; exit $?; }
+# options:
+#   -d N (depth; default 2)
+#   -s s|f|d (default s) to sort by size, file count, directory count
+
+# output: the output is lines like this
+#   <size> <#files> <#dirs> path
+# where "path" is truncated to the depth requested, and the numbers are
+# summations for path and its descendents.
+
+# Basically, think of ncdu, but with entries at a greater depth (default 2),
+# and also include file counts and directory counts to the size.
+
+# For more info, see https://github.com/sitaramc/tools/blob/master/dirstat.mkd
+
+DEPTH=2
+SORT=s
+while getopts 's:d:' c
+do
+    case $c in
+        d) DEPTH=$OPTARG ;;
+        s) SORT=$OPTARG ;;
+    esac
+done
+
+case $SORT in
+    # convert to the field number in the eventual output
+    s ) SORT=1 ;;
+    f ) SORT=2 ;;
+    d ) SORT=3 ;;
+esac
+
+_cut() {
+    # takes the output of "find -ls", which looks like this:
+
+    #   5636574      4 drwx------   6  sitaram  sitaram      4096 Sep 17 06:41 .
+    #   5636154      4 drwx------   9  sitaram  sitaram      4096 Sep 17 06:41 ./contrib
+    #   5636155      4 drwx------   2  sitaram  sitaram      4096 Sep 17 06:41 ./contrib/commands
+    #   5636156      8 -rwx------   1  sitaram  sitaram      4587 Sep 17 06:41 ./contrib/commands/compile-1
+    #   5636157     32 -rwx------   1  sitaram  sitaram     29575 Sep 17 06:41 ./contrib/commands/ukm
+
+    # and converts it into (note the hard tabs)
+
+    #   0	0	1	.
+    #   0	0	1	contrib
+    #   0	0	1	contrib/commands
+    #   4587	1	0	contrib/commands/compile-1
+    #   29575	1	0	contrib/commands/ukm
+
+    # where column 1 is the size, column 2 is "1" for files, "0" otherwise,
+    # and column 3 is the opposite ("1" for directories, "0" otherwise).
+
+    # As a bonus, it can automagically deal with the output of "tar -tvf" too!
+
+    perl -ne '
+        chomp;
+        unless ($nf) {
+            # this will execute only on the first input line
+            ($tf,$sf,$nf) = (2,6,10);                           # find -ls output fields
+            ($tf,$sf,$nf) = (0,2,5) if /^[-d][rwxXst-]{9}/;     # tar -tvf output fields
+        }
+        next unless s/([-d])[rwxXst-]{9}/$1/;
+        @f = split " ", $_, $nf+1;
+        ($t, $s, $n) = @f[$tf, $sf, $nf];
+        $n =~ s(^\.\/)(); $n =~ s(/$)(); $n ||= ".";
+        if ($t eq "-") {
+            print "$s\t1\t0\t$n\n"
+        } else {
+            print "0\t0\t1\t$n\n"
+        }
+    ' | cut -f1-$1 -d/
+    # and at the end it also chops off trailing path components beyond the
+    # requested depth
+}
+
+MB() {
+    # the first field in the line is total bytes; convert to MB
+    perl -lpe 's(^ *(\d+))($1 ? sprintf "%8.3f", $1/1_000_000 : "    -   ")e'
+}
+
+_head() {
+    [ -t 1 ] && { printf "%04s %23s %15s %7s\n" "MB" "NFiles" "NDirs" "Path"; head -20; }
+    [ -t 1 ] || cat
+}
+
+_cut $DEPTH |
+    datamash --format=%12.0f -s -g 4 sum 3 sum 2 sum 1 | datamash reverse |
+    sort -k$SORT,${SORT}nr |
+    MB |
+    _head
