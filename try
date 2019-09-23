@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ "$1" != "--fzf" ]
+then
+    export FZF_DEFAULT_COMMAND=echo
+    exec fzf -q "$*" --preview-window=up:99% --preview="$0 --fzf {q}"
+fi
+
+shift
+eval "$*"
