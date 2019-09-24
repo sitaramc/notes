@@ -1,0 +1,61 @@
+# argmod
+
+The purpose of `argmod` is basically to mangle shell arguments (or results)
+using regexes.  Just put `argmod` and `argmod.pl` somewhere in $PATH and use
+it as shown in `argmod-example.sh`.
+
+(It originally started as a much larger, more ambitious, and, frankly,
+over-engineered, program, until old age and better sense prevailed and I
+whittled it down to its bare essentials.)
+
+Here's one example.  I often have partially downloaded youtube videos on
+various subjects.  `youtube-dl` creates files with names ending in `.part`
+while the download is progressing.  Or, they may be files whose names end in
+`.f137.part` or something like that.
+
+I would like to easily restart the download of any such file, by parsing the
+name of the file containing the incomplete download, and generating the
+original URL from it.
+
+The argmod rules that do this for me are:
+
+    yturl (.*).part                         =>  yturl %1
+    yturl (.*)\.f\d+\.(.*)                  =>  yturl %1.%2
+    yturl .*-([^.]{10}.*)\.\w+$             =>  echo https://www.youtube.com/watch?v=%1
+
+Another example, which shows a different way to use argmod, is this shell
+function:
+
+    avq() {
+        for i; do
+            x=$(ffprobe -v error -of compact -select_streams v:0 -show_entries stream=height,width $i)
+            y=$(ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 -sexagesimal $i)
+
+            _argmod $x $y <<<'stream.width=(\d+).height=(\d+) ([0-9:]+).*   =>  %1x%2 %3'
+            printf "%-10s  %-10s\t%s\n" "${args[@]}" "$i"
+        done
+    }
+
+And here's how it is used:
+
+    $ avq 'Kernel Recipes 2016 - From ‘git tag’ to the front page - Konstantin Ryabitsev-vohrz14S6JE.mkv'
+    1280x720    0:53:03     Kernel Recipes 2016 - From ‘git tag’ to the front page - Konstantin Ryabitsev-vohrz14S6JE.mkv
+
+Just for clarity, the original output of the two ffprobe commands is
+
+    stream|width=1280|height=720
+    0:53:03.241000
+
+(on two separate lines).  Can I not simply take the output above and live with
+it?  Maybe, but I got used to the `WIDTHxHEIGHT <spaces> hH:MM:SS` format a
+long time ago elsewhere, and I like it.
+
+Can I not simply use bash's own string handling to do this?  Again, maybe, but
+it's a lot more cumbersome, so the more of this sort of thing you have to do,
+the more you'll look for a better tool.
+
+Can I not write a simple perl 1-liner to process the text the way I want it?
+Well sure, but have you looked at argmod.pl?  If you take out all the
+scaffolding, it's barely a dozen lines, and it's much more reusable!
+
+"regex-parsing as a service", if you are the kind to appreciate that joke :)

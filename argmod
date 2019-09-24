@@ -1,0 +1,8 @@
+# Bash only.  Meant to be "source"d.  Calling won't work, because the args
+# array won't travel back to the caller if you do that.
+
+_argmod() {
+    readarray -t args <<< $(argmod.pl "$@")
+    # argmod.pl will read RULES from stdin, and send modified ARGS to stdout,
+    # one per line, which then get captured into the "args" bash array.
+}
