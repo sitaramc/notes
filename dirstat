@@ -2,6 +2,8 @@
 
 # take output of either "tar -tvf" or "find ... -ls" via stdin, summarise.
 
+# requires GNU datamash
+
 # stdin: as described above, or if not a pipe, will run `find -ls`
 [[ -t 0 ]] && { find -ls | $0 "$@"; exit $?; }
 # options:
@@ -13,8 +15,8 @@
 # where "path" is truncated to the depth requested, and the numbers are
 # summations for path and its descendents.
 
-# Basically, think of ncdu, but with entries at a greater depth (default 2),
-# and also include file counts and directory counts to the size.
+# Basically, think of ncdu, but with entries flattened out to a given depth
+# (default 2), and show file and directory counts along with size.
 
 # For more info, see https://github.com/sitaramc/tools/blob/master/dirstat.mkd
 
@@ -67,7 +69,7 @@ _cut() {
         next unless s/([-d])[rwxXst-]{9}/$1/;
         @f = split " ", $_, $nf+1;
         ($t, $s, $n) = @f[$tf, $sf, $nf];
-        $n =~ s(^\.\/)(); $n =~ s(/$)(); $n ||= ".";
+        $n =~ s(^\./)(); $n =~ s(/$)(); $n ||= ".";
         if ($t eq "-") {
             print "$s\t1\t0\t$n\n"
         } else {
@@ -84,7 +86,8 @@ MB() {
 }
 
 _head() {
-    [ -t 1 ] && { printf "%04s %23s %15s %7s\n" "MB" "NFiles" "NDirs" "Path"; head -20; }
+    printf "%04s %23s %15s %7s\n" "MB" "NFiles" "NDirs" "Path"
+    [ -t 1 ] && head -20
     [ -t 1 ] || cat
 }
 

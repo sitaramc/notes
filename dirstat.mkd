@@ -1,5 +1,20 @@
 # "dirstat" -- statistics for a directory (or tar file)
 
+<!--ts-->
+   * [requirements](#requirements)
+   * [flattened view](#flattened-view)
+   * [unusual patterns](#unusual-patterns)
+   * [tar files](#tar-files)
+   * ["interactive"?  Well no, but...](#interactive--well-no-but)
+   * [how to run it](#how-to-run-it)
+   * [a quick warning about how "depth" is computed](#a-quick-warning-about-how-depth-is-computed)
+
+<!-- Added by: sitaram, at: Fri 27 Sep 2019 05:53:17 AM IST -->
+
+<!--te-->
+
+----
+
 I often find I need a **quick, birds-eye view** of a directory, and it should
 include not just space, but also number of files and directories.  If you've
 ever used `qdirstat` or similar tools, you know what I mean, but I don't know
@@ -11,22 +26,11 @@ Oh, and before I get to the actual features, I should mention that `dirstat`
 can do the same kind of summarisation using the output of `tar -tvf` too!  I'm
 not sure I know of any tool that can do that.
 
-----
+# requirements
 
-## table of contents
-
-<!--ts-->
-   * [flattened view](#flattened-view)
-   * [unusual patterns](#unusual-patterns)
-   * [tar files](#tar-files)
-   * [usage and options](#usage-and-options)
-   * ["interactive"?  Well no, but...](#interactive--well-no-but)
-   * [how to run it](#how-to-run-it)
-   * [a quick warning about how "depth" is computed](#a-quick-warning-about-how-depth-is-computed)
-
-<!-- Added by: sitaram, at: Sun 22 Sep 2019 02:34:04 PM IST -->
-
-<!--te-->
+Uses GNU datamash.  Admittedly, it could be replaced by any other similar
+script or I could even replace it with pure perl, but I was lazy and I
+happened to have had it installed already.
 
 # flattened view
 
@@ -59,8 +63,8 @@ And here's what `dirstat` shows, with the default "depth" of 2:
 (Ignore the differences caused by MiB versus MB and so on for now).
 
 Notice that even though `ncdu` shows `events` to be the largest directory, in
-terms of what is interesting to me -- which is defined by the **next** level
-in the hierarchy -- the largest directory is actually `cameras/s3is`.
+terms of what is interesting to me -- which is the **next** level in the
+hierarchy -- the largest directory is actually `cameras/s3is`.
 
 This is what I meant by "flattening out" the hierarchy, upto a given depth.
 And I believe this is very useful in a lot of situations.  Especially when you
@@ -98,31 +102,26 @@ of my VPSs was far larger than a week before:
         total 442812
         drwx------. 2 sitaram sitaram     4096 Aug 20 02:27 .
         drwxr-xr-x. 6 sitaram sitaram     4096 Aug 21 06:54 ..
-        -rw-r--r--. 1 sitaram sitaram 49315840 Aug 10 05:32 elided-2019-08-10.tar
-        -rw-r--r--. 1 sitaram sitaram 48496640 Aug 11 05:32 elided-2019-08-11.tar
-        -rw-r--r--. 1 sitaram sitaram 49418240 Aug 12 05:32 elided-2019-08-12.tar
-        -rw-r--r--. 1 sitaram sitaram 50247680 Aug 13 05:32 elided-2019-08-13.tar
+            [...]
         -rw-r--r--. 1 sitaram sitaram 50688000 Aug 14 05:32 elided-2019-08-14.tar
         -rw-r--r--. 1 sitaram sitaram 76387520 Aug 15 05:32 elided-2019-08-15.tar
-        -rw-r--r--. 1 sitaram sitaram 77124800 Aug 16 05:32 elided-2019-08-16.tar
-        -rw-r--r--. 1 sitaram sitaram 79756480 Aug 17 05:32 elided-2019-08-17.tar
-        -rw-r--r--. 1 sitaram sitaram 79981760 Aug 18 05:32 elided-2019-08-18.tar
+            [...]
 
 Simply running `tar -tvf elided-2019-08-14.tar | mydu -d 3` and `tar -tvf
 elided-2019-08-15.tar | mydu -d 3` on side by side windows showed me what the
 problem was (I had downloaded some documents and put them in the wrong
 directory on the VPS).
 
-# usage and options
-
 # "interactive"?  Well no, but...
 
 Of course, not being smart enough to write ncurses stuff, `dirstat` is a
 single shot (i.e., non-interactive) command.  But, using the [try
-command](https://github.com/sitaramc/tools/blob/master/try) (docs
-[here](https://github.com/sitaramc/tools/blob/master/try.mkd), I can make it
+command](https://github.com/sitaramc/tools/blob/master/try) I can make it
 fairly interactive anyway, and pretty cheaply, in terms of amount of code I
 had to write.
+
+In fact the "documentation" for the try command consists of a video
+demonstrating its use in playing with `dirstat`; see [[try.webm]].
 
 # how to run it
 
@@ -141,7 +140,7 @@ and you run it in one of these ways:
     cd /usr; dirstat -d 1
     # stats for /usr, depth 1
     find /usr -ls | dirstat -d 3
-    # same results as previous command; see section on "depth" later
+    # same results as previous command; see notes on "depth" later
 
     tar -tvf foo.tar | dirstat -d 3
     # contents of tar, depth of 3
@@ -155,9 +154,8 @@ You can use `-s f` or `-s d` to override the default of sort-by-size and sort
 instead by file count or directory count.  Sort is always descending.
 
 In all cases, if the output is to a terminal, dirstat will invoke a `head -20`
-on the output, and prefix a simple header line.  If you want to see all of the
-output, either use a pager like `less`, redirect it to a file, or simply pipe
-it to `cat`.
+on the output.  If you want to see all of the output, either use a pager like
+`less`, redirect it to a file, or simply pipe it to `cat`.
 
 # a quick warning about how "depth" is computed
 

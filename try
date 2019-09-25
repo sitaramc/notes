@@ -3,6 +3,9 @@
 if [ "$1" != "--fzf" ]
 then
     export FZF_DEFAULT_COMMAND=echo
+    # basically, fzf is not getting any input.  You're just using it for the
+    # side effect of the preview feature!
+
     exec fzf -q "$*" --preview-window=up:99% --preview="$0 --fzf {q}"
 fi
 
