@@ -77,6 +77,12 @@ the author's own vifmrc!)
 
     [cm]:https://vifm.info/vimdoc.shtml#vifm-macros "https://vifm.info/vimdoc.shtml#vifm-macros"
 
+*   **previewing directories**.  I like that when you turn on "preview"
+    (`:view`, or whatever letter you map it to), directories show up with the
+    full tree view on the right side.  A real time saver when you are
+    exploring a new directory, or when cleaning up / general housekeeping of
+    long forgotten directories.
+
 *   **previewing directories with a custom command**.  You cannot imagine,
     when browsing a git repo, how nice it is to see a "git log" of the file or
     directory in the preview window.  While most fm's will probably allow that
