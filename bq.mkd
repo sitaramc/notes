@@ -1,0 +1,142 @@
+# bq -- simple batch queueing command
+
+<!--ts-->
+   * [quick overview](#quick-overview)
+   * [workers](#workers)
+   * [tasks](#tasks)
+   * [status](#status)
+   * [cleanup](#cleanup)
+   * [using a different queue](#using-a-different-queue)
+   * [files in the QDIR](#files-in-the-qdir)
+
+<!-- Added by: sitaram, at: Fri 27 Sep 2019 06:21:39 AM IST -->
+
+<!--te-->
+
+----
+
+This is now, effectively, version 3 of my "batch queue" command, and it was
+finally deemed simple enough to move into my new "tools" repo than be on its
+own!
+
+Usage is very simple, and should fit all those posts I saw where people
+appeared to want exactly this, but were being directed to "batch" (which won't
+queue), or told to use a semicolon (seriously!), and so on.
+
+The **only** tool that really fits the bill for all those needs is
+task-spooler, which, according to `rpm -qi task-spooler` on my system, is at
+<http://vicerveza.homeunix.net/~viric/soft/ts>.  It is much more powerful than
+this program, while also being very easy to use.
+
+The only reason I wrote this, despite knowing of task-spooler, is that I often
+work on machines where I am not allowed to install whatever I want, so having
+something that just uses bash is very useful.
+
+# quick overview
+
+    # start a worker
+    bq -w
+    # start a couple of jobs
+    bq some long running command
+    bq another command  # will run after the previous one completes
+    # examine the output directory at any time
+    bq                              # uses vifm as the file manager
+    export BQ_FILEMANAGER=mc; bq    # env var overrides default
+
+    # you can only run one simple command; if you have a command with shell
+    # meta characters (;, &, &&, ||, >, <, etc), do this:
+    bq bash -c 'echo hello; echo there >junk.$RANDOM'
+
+# workers
+
+`bq -w` starts a worker.  If you want more workers, run it multiple times.  If
+you queue commands without starting a worker, they'll just sit in the queue
+until you start one.
+
+To reduce the number of workers, run `bq -k`.  The next worker that comes
+round looking for a task to run will exit, reducing the worker count by 1.
+
+You can stop the queue by stopping all the workers.  Tasks still in queue will
+be picked up when you start a worker again.
+
+# tasks
+
+Start a task by just prefixing the command with "bq":
+
+    bq youtube-dl https://www.youtube.com/watch?v=vohrz14S6JE
+
+If a worker is free it will start running immediately, otherwise it will run
+when a worker becomes free.
+
+# status
+
+Running `bq` without any arguments runs the vifm file manager on the "Q
+directory".  The directory and file names are mostly self-explanatory, and
+you'll see the view changing as commands complete, new ones start, etc.  See
+the "files in the QDIR" section below for more on this if you need.
+
+You can override the default of "vifm" by setting `BQ_FILEMANAGER` to the
+file manager of your choice, including any options you need.
+
+# cleanup
+
+You have to clean up the ".1", ".2", and ".exitcode=N" files yourself.  Bq cannot
+know when you're no longer interested in the output of some long-ago run
+command :)
+
+# using a different queue
+
+The default queue is "default".  You can create other queues if you need:
+
+    bq -w                   # start a worker in default queue
+    bq -q net -w            # start a worker in "net" queue
+    bq -q cpu -w            # start a worker in "cpu" queue
+    bq sleep 30             # runs in default queue
+    bq -q net wget ...      # runs in "net" queue
+    bq -q cpu ffmpeg ...    # runs in "cpu" queue
+
+There is no sanity checking on the name you choose; please use a simple word
+like in the examples.
+
+I must also add that I have never yet *needed* multiple queues.  I do have
+differing needs, but never at the same time, so just the default has sufficed
+so far.
+
+# files in the QDIR
+
+The Q directory, which is by default `/dev/shm/bq-$USER-default`, contains all
+the files that make bq tick.  An explanation of what they are follows.
+
+(Side note: why `/dev/shm`?  I prefer /dev/shm for output files; I assume most
+jobs output is small enough (otherwise you would have redirected it!) I'm more
+interested in making sure that this does not touch the disk (cause disk IO, or
+"wake up" the disk if it was asleep), because that's the way I roll!)
+
+**Worker**: for each worker, there is a PID file in the `w/` subdirectory.  It
+contains a list of all the commands that this worker ran till now.  When a
+worker exits, this file is renamed to have a ".exited" extension.
+
+**Tasks**: each task has an **ID**, which looks like
+`1549791234.23456.ffmpeg`.  The first bit is a timestamp (`date +%s`), the
+next is the PID that submitted the job, the third bit is the first word of the
+command (in our example, "ffmpeg").
+
+Here's the lifecycle of a task in terms of the filenames you will see:
+
+*   A task starts out as file `q/$ID` when it is in queue, waiting for a free
+    worker.  The first line of this file is the PWD when the task was
+    submitted, the second line contains the command to be run, and subsequent
+    lines have the arguments, one per line.
+
+*   When it starts running, this file is pulled out of the `q` directory and
+    renamed to `$ID.running.wPID`, where "wPID" is the PID of the worker that
+    picked up this task.  In addition, two more files, `$ID.1` and `$ID.2`,
+    are created that contain the stdout and stderr of the task, respectively.
+
+*   When the task completes, this file is renamed to `$ID.exitcode=N`, where N
+    is the exitcode of the task.
+
+    For convenience, all files for tasks that have completed successfully,
+    i.e., exitcode was 0, will be moved to a subdirectory called "OK".  This
+    lets you clear out all these files in one go if you trust the exitcode and
+    don't need to check the actual outputs.
