@@ -1,5 +1,28 @@
 # vifm -- file manager with vim-like key bindings
 
+<!--ts-->
+   * [vifm -- file manager with vim-like key bindings](#vifm----file-manager-with-vim-like-key-bindings)
+      * [features I really like](#features-i-really-like)
+      * [things you'll see right away](#things-youll-see-right-away)
+      * [basic file operations](#basic-file-operations)
+      * [other file operations](#other-file-operations)
+      * [selecting files](#selecting-files)
+      * [opening files](#opening-files)
+      * [previewing files](#previewing-files)
+         * [image preview](#image-preview)
+      * [mapping common tasks](#mapping-common-tasks)
+      * [finding files](#finding-files)
+         * [finding the "N" most recently committed/modified or largest files](#finding-the-n-most-recently-committedmodified-or-largest-files)
+      * [finding text within files](#finding-text-within-files)
+      * [external commands](#external-commands)
+      * [ouch!](#ouch)
+
+<!-- Added by: sitaram, at: Fri 27 Sep 2019 06:32:53 PM IST -->
+
+<!--te-->
+
+----
+
 (last updated: March 2019)
 
 This is not meant to be a how-to-use-vifm; the documentation on [the
