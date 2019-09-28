@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# assumptions: there are no hard tabs in the input
+
+sed -e 's/   */\t/g' | column -s$'\t' -t -o$'\t' | sed -e 's/\t/ \t/g' | expand -4
+
+: <<EOF
+
+Q:  Why all this extra effort instead of just "column -t"?
+
+A:  I use this to line up things where the cell value itself may have spaces,
+    so I can't use a single space as a delimiter -- too many words that should
+    be *within* a cell would be split into columns!
+
+    So this uses two (or more) spaces as a delimiter.  Also, it maintains at
+    least 2 spaces in the output, so that the whole thing is idempotent.
+
+    (As a bonus, things are lined up on tabstop 4 boundaries, which I
+    personally happen to prefer over 2 or 8).
+
+EOF
