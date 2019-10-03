@@ -1,0 +1,96 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+# set -x
+# export PS4=':.$LINENO:'
+
+# please see https://github.com/sitaramc/tools/blob/master/argmod.mkd for details
+
+[[ ${1-} = -h ]] && {
+    cat <<EOF
+
+sf wraps the 'find' command to provide the following shortcuts:
+
+-   sf                          =>  find .
+-   sf /tmp                     =>  find /tmp
+-   sf foo                      =>  find . -iname "*foo*"
+-   sf /tmp foo                 =>  find /tmp -iname "*foo*"
+-   sf -n foo                   =>  (same as without -n) find . -iname "*foo*"
+-   sf /tmp -n foo              =>  (same as without -n) find /tmp -iname "*foo*"
+-   sf -r foo                   =>  find . -iregex ".*foo.*"
+-   sf /tmp -r foo              =>  find /tmp -iregex ".*foo.*"
+(as you can see, if the first argument is not a directory we assume ".", and
+if the second argument does not start with a "-", "-n" is inserted)
+
+Other shortcuts:
+-   -d N                        =>  -maxdepth N
+-   -f, -d, and -l              =>  -type f, -type d, and -type l, respectively
+-   -m -5                       =>  -mmin -5 (similarly for -c and cmin)
+    # just suffix a "d" for days:
+-   -m -5d                      =>  -mtime -5 (similarly for -c and ctime)
+-   -s +100m                    =>  -size +100M (note upper case M)
+    # defaults to "k" (not "blocks"), accepts k/m/g in upper or lower case
+
+Note:
+-   -m, -c, -s also list *and* sort according to the appropriate field
+-   -m, -c, and -s can be used without any arguments to print *all* the files
+
+Caution:
+-   you can only have 0 or 1 directory name, no more
+-   place -d N only at the start or just after the directory name
+-   if you use -d N, then the "-n" has to be explicit
+-   place -m, -c, and -s at the very end
+
+EOF
+    exit 1;
+}
+
+# if the first argument is not a directory, use "."
+# (this cannot be done by argmod, since there is no way to specify arbitrary logic)
+[[ -d ${1-} ]] || set -- . "$@"
+
+source `which argmod`
+_argmod "$@" <<'EOF'
+
+    # if the second argument does not begin with a hyphen, insert "-n"
+    ^% ([^-].*)     =>  %1 -n %2
+
+    -d (\d+)        =>  -maxdepth %1
+    -n %            =>  -iname "*%1*"
+    -r %            =>  -iregex ".*%1.*"
+    -([fdl])        =>  -type %1
+
+    # ideally that "." below should be "[-+]", but... *shrug*
+    -m (.\d+)       =>  -mmin %1 -PM
+    -c (.\d+)       =>  -cmin %1 -PC
+    -m (.\d+)d      =>  -mtime %1 -PM
+    -c (.\d+)d      =>  -ctime %1 -PC
+
+    -s (.\d+)       =>  -size %1k -PS
+    -s (.\d+)[kK]   =>  -size %1k -PS
+    -s (.\d+)[mM]   =>  -size %1M -PS
+    -s (.\d+)[gG]   =>  -size %1G -PS
+
+    # no criteria, just print
+    -m              =>  -PM
+    -c              =>  -PC
+    -s              =>  -PS
+
+    # translated trailing PM/PC/PS to leading flags
+    %% -PM          =>  M %1
+    %% -PC          =>  C %1
+    %% -PS          =>  S %1
+
+EOF
+
+_find() {
+    case $1 in
+        M ) shift; find "$@" -printf "%TF.%TT\t%p\n" | LANG=C sort ;;
+        C ) shift; find "$@" -printf "%CF.%CT\t%p\n" | LANG=C sort ;;
+        S ) shift; find "$@" -printf "%12s\t%p\n"    | LANG=C sort ;;
+        *)  find "$@" ;;
+    esac
+}
+
+[[ -n "${D:-}" ]] && set -x
+eval _find "${args[@]}"

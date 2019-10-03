@@ -2,16 +2,18 @@
 
 The purpose of `argmod` is basically to mangle shell arguments (or results)
 using regexes.  Just put `argmod` and `argmod.pl` somewhere in $PATH and use
-it as shown in `argmod-example.sh`.
+it as shown in the two example programs here.
 
 (It originally started as a much larger, more ambitious, and, frankly,
 over-engineered, program, until old age and better sense prevailed and I
 whittled it down to its bare essentials.)
 
-Here's one example.  I often have partially downloaded youtube videos on
-various subjects.  `youtube-dl` creates files with names ending in `.part`
-while the download is progressing.  Or, they may be files whose names end in
-`.f137.part` or something like that.
+# example -- extracting youtube IDs from a filename
+
+Here's a simple example to start with.  I often have partially downloaded
+youtube videos on various subjects.  `youtube-dl` creates files with names
+ending in `.part` while the download is progressing.  Or, they may be files
+whose names end in `.f137.part` or something like that.
 
 I would like to easily restart the download of any such file, by parsing the
 name of the file containing the incomplete download, and generating the
@@ -22,6 +24,8 @@ The argmod rules that do this for me are:
     yturl (.*).part                         =>  yturl %1
     yturl (.*)\.f\d+\.(.*)                  =>  yturl %1.%2
     yturl .*-([^.]{10}.*)\.\w+$             =>  echo https://www.youtube.com/watch?v=%1
+
+# example -- extracting video size and duration
 
 Another example, which shows a different way to use argmod, is this shell
 function:
@@ -50,6 +54,8 @@ Just for clarity, the original output of the two ffprobe commands is
 it?  Maybe, but I got used to the `WIDTHxHEIGHT <spaces> hH:MM:SS` format a
 long time ago elsewhere, and I like it.
 
+# some thoughts on alternatives
+
 Can I not simply use bash's own string handling to do this?  Again, maybe, but
 it's a lot more cumbersome, so the more of this sort of thing you have to do,
 the more you'll look for a better tool.
@@ -59,3 +65,53 @@ Well sure, but have you looked at argmod.pl?  If you take out all the
 scaffolding, it's barely a dozen lines, and it's much more reusable!
 
 "regex-parsing as a service", if you are the kind to appreciate that joke :)
+
+# example -- wrapper for the "find" command
+
+The final example is what in my personal toolbox is a command called "sf",
+which lets me use the find command much better than anything else I have seen
+(even though the new "fd" command is much faster at raw speed).
+
+"sf" lets me do things like this.
+
+Find files modified less than 5 minutes ago:
+
+    $ sf -m -5
+    2019-10-03.15:46:08.1627288690  ./argmod-example-2.sh
+    2019-10-03.15:47:01.5629152860  ./sf
+    2019-10-03.15:47:05.6479295460  ./.git
+    2019-10-03.15:49:01.3343568240  ./argmod.mkd
+    2019-10-03.15:49:01.3353568280  .
+
+Find files modified more than 5 days ago (except those inside the ".git" directory):
+
+    $ sf -m +5d | grep -v ./.git
+    2019-09-27.08:43:51.6766179840  ./argmod
+    2019-09-27.08:43:51.6766179840  ./argmod-example-1.sh
+    2019-09-27.08:43:51.6766179840  ./argmod.pl
+    2019-09-27.08:43:51.6766179840  ./bq
+    2019-09-27.08:43:51.6766179840  ./bq.mkd
+    2019-09-27.08:43:51.6776179860  ./dirstat
+    2019-09-27.08:43:51.6776179860  ./dirstat.mkd
+    2019-09-27.08:43:51.6776179860  ./try
+    2019-09-27.08:43:51.6866180080  ./try.webm
+
+Find all files sorted by size (again, except from .git):
+
+    $ sf -s | grep -v ./.git
+               2    ./argmod-example-2.sh
+             287    ./try
+             340    ./argmod
+             480    ./argmod-example-1.sh
+             700    ./lineup
+            1936    ./argmod.pl
+            3122    ./dirstat
+            3191    ./sf
+            3526    ./README.mkd
+            3949    ./argmod.mkd
+            4096    .
+            5737    ./bq
+            5760    ./bq.mkd
+            6895    ./dirstat.mkd
+         1363107    ./try.webm
+
