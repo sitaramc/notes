@@ -1,0 +1,37 @@
+# sf -- wrapper around "find"
+
+`sf` is a wrapper around the find command.
+
+You might notice that `argmod-example-2.sh` is symlinked to `sf` in this
+directory; that is because `sf` is a great example (in fact the longest one I
+have in my toolbox) of [`argmod`](argmod.mkd), which you should totally look
+up right now!
+
+`sf` was borne out of frustration with the find command's idiosyncracies:
+
+-   why can't -iname and -iregex match on *part of* the name/path (IOW, why do
+    I have to always prefix/suffix `*` or `.*`, respectively)?
+-   why "mmin" and "mtime"?  Why not use only one option and simply add a "d"
+    suffix to the number instead
+-   why does -size want lowercase k but uppercase M and G?
+-   while we're on the topic, who the hell uses "blocks" anymore?
+-   and finally (tongue-in-cheek) why do the most common options so long and
+    tedious to type?
+
+But the most important thing `sf` does for me is sort the output by file mod
+time ("mtime"), inode change time ("ctime"), or size.  Literally the most
+common thing I do with `sf` is look for the largest files, or the most
+recently changed/touched ones.
+
+## side note: why not "fd"?
+
+To be honest, the [`fd`](https://github.com/sharkdp/fd) command, which is now
+available almost everywhere except curmudgeonly versions like CentOS 7, could
+replace a lot of this for me.  What `fd` seriously lacks is the ability to
+search based on inode change time ("ctime" as opposed to "mtime").  It would
+also be nice if it had a builtin printf feature but that can be worked around.
+
+It doesn't help that I have *several* CentOS 7 servers (even some CentOS 6)
+that I have to occasionally work on, and I just cannot live without, for
+example, `sf -c -10d` (find all files whose inodes were changed less than 10
+days ago, printing the ctime in a sortable format along with the filename).
