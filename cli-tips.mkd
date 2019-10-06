@@ -1,8 +1,8 @@
-# placeholder for cli-tips
+# Placeholder for cli-tips
 
-## files and directories
+## Files and Directories
 
-### short-lived files
+### Short-lived Files
 
 For some strange reason, I prefer not to create short-lived files on the hard
 disk, preferring to create them in a `tmpfs` instead.  This uses only RAM,
@@ -43,10 +43,10 @@ if you need to, and do things.  (With [vifm.mkd](vifm.mkd) and it's
 "synchronised registers", there are other ways of getting files into and out
 of this temporary directory without having to type in random paths)
 
-### progress bar while copying files
+### Progress Bar while Copying Files
 
 One of the programs I have had in my `~/bin` for some months is
-[`fxp`](fxp.pl).  (I'm terrible at names, by the way, so that's supposed to
+[`fxp`](fxp).  (I'm terrible at names, by the way, so that's supposed to
 mean "file transfer with progress"!)
 
 It's basically just a wrapper around `rsync -avP`, to capture and mangle its
