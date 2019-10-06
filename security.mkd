@@ -7,9 +7,24 @@ local user to root is not possible (and I keep a close watch for security
 announcements that might change that assumption -- they're rare but do
 happen!)
 
+----
+
 <!--ts-->
+   * [user-separation](#user-separation)
+      * [web browsing](#web-browsing)
+      * [email](#email)
+      * [documents and other non-text files](#documents-and-other-non-text-files)
+   * [other mechanisms](#other-mechanisms)
+      * [password management](#password-management)
+      * [mutt/thunderbird for gmail](#muttthunderbird-for-gmail)
+      * [qutebrowser versus firefox](#qutebrowser-versus-firefox)
+      * [firejail](#firejail)
+
+<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:04:32 AM IST -->
 
 <!--te-->
+
+----
 
 # user-separation
 

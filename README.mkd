@@ -1,18 +1,5 @@
 # Various tools in my toolbox -- notes and code
 
-<!--ts-->
-   * [tools](#tools)
-   * [compatibility / requirements](#compatibility--requirements)
-   * [one-line descriptions](#one-line-descriptions)
-      * [try](#try)
-   * [details (of some of the smaller ones)](#details-of-some-of-the-smaller-ones)
-
-<!-- Added by: sitaram, at: Fri 27 Sep 2019 05:52:59 AM IST -->
-
-<!--te-->
-
-----
-
 Over the past couple of decades, I have used several Unix tools, and have
 amassed a pretty good collection of notes, tips, and tricks on many of them.
 I've also created several little tools for my own use.
@@ -23,6 +10,27 @@ of them did have their own repos, and in a couple of cases even some history,
 with several totally rewritten versions.  But they all gradually became
 smaller and simpler (as I became smarter??) until they qualified to be in this
 repo rather than have their own!)
+
+----
+
+<!--ts-->
+   * [external tools](#external-tools)
+      * [vifm -- file manager with vim-like key bindings](#vifm----file-manager-with-vim-like-key-bindings)
+   * [my own toolbox](#my-own-toolbox)
+      * [installation](#installation)
+      * [compatibility / requirements](#compatibility--requirements)
+      * [one-line descriptions](#one-line-descriptions)
+         * [try](#try)
+   * [appendix A: other tools in my toolbox](#appendix-a-other-tools-in-my-toolbox)
+      * [map](#map)
+   * [appendix B: really minor hacks...](#appendix-b-really-minor-hacks)
+      * [lineup](#lineup)
+
+<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:04:34 AM IST -->
+
+<!--te-->
+
+----
 
 # external tools
 

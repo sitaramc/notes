@@ -1,30 +1,5 @@
 # vifm -- file manager with vim-like key bindings
 
-<!--ts-->
-   * [vifm -- file manager with vim-like key bindings](#vifm----file-manager-with-vim-like-key-bindings)
-      * [features I really like](#features-i-really-like)
-      * [things you'll see right away](#things-youll-see-right-away)
-      * [basic file operations](#basic-file-operations)
-      * [other file operations](#other-file-operations)
-      * [selecting files](#selecting-files)
-      * [opening files](#opening-files)
-      * [previewing files](#previewing-files)
-         * [image preview](#image-preview)
-      * [mapping common tasks](#mapping-common-tasks)
-      * [finding files](#finding-files)
-         * [finding the "N" most recently committed/modified or largest files](#finding-the-n-most-recently-committedmodified-or-largest-files)
-      * [finding text within files](#finding-text-within-files)
-      * [external commands](#external-commands)
-      * [ouch!](#ouch)
-
-<!-- Added by: sitaram, at: Fri 27 Sep 2019 06:32:53 PM IST -->
-
-<!--te-->
-
-----
-
-(last updated: March 2019)
-
 This is not meant to be a how-to-use-vifm; the documentation on [the
 website](http://vifm.info) is pretty detailed, and comes in two slightly
 different forms.
@@ -38,7 +13,31 @@ found so far.
 many parts of my vifmrc have been snarfed from other people, especially from
 the author's own vifmrc!)
 
-## features I really like
+----
+
+<!--ts-->
+   * [features I really like](#features-i-really-like)
+   * [things you'll see right away](#things-youll-see-right-away)
+   * [basic file operations](#basic-file-operations)
+   * [other file operations](#other-file-operations)
+   * [selecting files](#selecting-files)
+   * [opening files](#opening-files)
+   * [previewing files](#previewing-files)
+      * [image preview](#image-preview)
+   * [mapping common tasks](#mapping-common-tasks)
+   * [finding files](#finding-files)
+      * [finding the "N" most recently committed/modified or largest files](#finding-the-n-most-recently-committedmodified-or-largest-files)
+   * [finding text within files](#finding-text-within-files)
+   * [external commands](#external-commands)
+   * [ouch!](#ouch)
+
+<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:07:27 AM IST -->
+
+<!--te-->
+
+----
+
+# features I really like
 
 *   **undo**: I don't know if I've been living under a rock, but I've never
     seen a file manager with undo!  Is this common?
@@ -141,7 +140,7 @@ the author's own vifmrc!)
 *   **marks** that get automatically saved.  TBH, I suspect many file managers
     have this; I know my old one did.
 
-## things you'll see right away
+# things you'll see right away
 
 *   2-pane file manager, a la midnight commander.  You can also make it *show*
     just one pane; I do that sometimes when the filenames are too long and I
@@ -195,7 +194,7 @@ the author's own vifmrc!)
     (Needless to say, `,` and `;` also work as they do in vim, with the
     exception that vim does not wrap around when the last one is found).
 
-## basic file operations
+# basic file operations
 
 *   Most basic operations work as you might expect.  For example, to **copy
     files**, you might hit `3yy` with the cursor on a file or directory, which
@@ -228,13 +227,13 @@ the author's own vifmrc!)
     start with a single digit and a hyphen.  This also takes `/i` and `/g`
     options.
 
-## other file operations
+# other file operations
 
 *   `chmod` is easy: just select the files and hit `cp` to get a menu; fill it
     in and hit enter.  Or type `:chmod u+x` or something like that.  You can
     add a `-R` or just use `chmod!` to get it to work recursively.
 
-## selecting files
+# selecting files
 
 *   `t` manually selects a file.  (I suggest `nmap <space> tj` in your vifmrc
     so that you can just hit `<space>` to select a file and move to the next
@@ -255,7 +254,7 @@ the author's own vifmrc!)
     names (`A-Z`) accumulate entries, so you can make multiple selections
     using various criteria, and keep adding them to a register if you wish.
 
-## opening files
+# opening files
 
 A quick note: `%c` is replaced by the name of the file under the cursor, `%f`
 by the names of all the files selected (if any; if not, it is the same as
@@ -293,7 +292,7 @@ letter, then the list that shows up will be limited to applications that start
 with those letters.  (E.g., on a PDF, with the settings above, I can hit `f
 z<cr>` to run zathura.)
 
-## previewing files
+# previewing files
 
 Before I get to the mundane stuff, let me get the cool stuff out of the way:
 
@@ -331,7 +330,7 @@ cursor!)
     " "pablo" to something else)
     fileviewer *[^/] highlight -O xterm256 --force -s pablo %c
 
-### image preview
+## image preview
 
 Sadly, this is still a pain, because there are so many terminal emulators, and
 so much variation between them (and tmux/screen also muck up things a little
@@ -365,7 +364,7 @@ one in my vifm browsing.  I can tell you this is a lot more predictable and
 repeatable than all the stupid w3m tricks I had been forced to pull in the
 past (and which often failed under tmux or screen anyway!)
 
-## mapping common tasks
+# mapping common tasks
 
 Just like vim, vifm uses variants of the `map` command to customise your usage
 of it.  Some samples from my vifmrc follow:
@@ -423,7 +422,7 @@ harder, I map this to TWO strikes of the Delete key:
 You'll see that I am reusing a small script that comes with vifm itself to do
 the pause and wait for the user to hit enter.
 
-## finding files
+# finding files
 
 vifm comes with the ability to use the find command, but I hate the find
 command.  (For a proper rant on `find`, see the comments in [my `sf`
@@ -448,7 +447,7 @@ active pane as a **custom view**.  You can preview those files, delete them,
 edit them, whatever.  When you're done, type `gh` to come back to the regular
 view.
 
-### finding the "N" most recently committed/modified or largest files
+## finding the "N" most recently committed/modified or largest files
 
 I mentioned this up at the top, but here's how you get the largest N, newest
 N, or most recently committed N, files.
@@ -482,7 +481,7 @@ treated as `:xc 10`).
 [pc_a]:https://vifm.info/vimdoc.shtml#vifm-%25a "https://vifm.info/vimdoc.shtml#vifm-%25a"
 [pc_U]:https://vifm.info/vimdoc.shtml#vifm-%25a "https://vifm.info/vimdoc.shtml#vifm-%25U"
 
-## finding text within files
+# finding text within files
 
 Speaking for myself, I don't use any IDE, and vim has always been sufficient
 for my needs.  A few plugins (like
@@ -523,7 +522,7 @@ What this does is open up a result window with all the matches.  You can:
     open this quickfix list in a new tmux window, so the current window will
     be used).
 
-## external commands
+# external commands
 
 *   `:!command` runs the command, and when it is done, comes back to vifm
     pane (it pauses only if the exit code was non-zero).
@@ -533,7 +532,7 @@ What this does is open up a result window with all the matches.  You can:
 
 *   `:!command &` runs the command in the background.
 
-## ouch!
+# ouch!
 
 *   **file filters**: I find this tanatlisingly useful, but it is somewhat
     confusing.

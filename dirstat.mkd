@@ -1,20 +1,5 @@
 # "dirstat" -- statistics for a directory (or tar file)
 
-<!--ts-->
-   * [requirements](#requirements)
-   * [flattened view](#flattened-view)
-   * [unusual patterns](#unusual-patterns)
-   * [tar files](#tar-files)
-   * ["interactive"?  Well no, but...](#interactive--well-no-but)
-   * [how to run it](#how-to-run-it)
-   * [a quick warning about how "depth" is computed](#a-quick-warning-about-how-depth-is-computed)
-
-<!-- Added by: sitaram, at: Fri 27 Sep 2019 05:53:17 AM IST -->
-
-<!--te-->
-
-----
-
 I often find I need a **quick, birds-eye view** of a directory, and it should
 include not just space, but also number of files and directories.  If you've
 ever used `qdirstat` or similar tools, you know what I mean, but I don't know
@@ -25,6 +10,23 @@ Apart from that, it's nice to see a "flattened" view, upto a certain depth.
 Oh, and before I get to the actual features, I should mention that `dirstat`
 can do the same kind of summarisation using the output of `tar -tvf` too!  I'm
 not sure I know of any tool that can do that.
+
+----
+
+<!--ts-->
+   * [requirements](#requirements)
+   * [flattened view](#flattened-view)
+   * [unusual patterns](#unusual-patterns)
+   * [tar files](#tar-files)
+   * ["interactive"?  Well no, but...](#interactive--well-no-but)
+   * [how to run it](#how-to-run-it)
+   * [a quick warning about how "depth" is computed](#a-quick-warning-about-how-depth-is-computed)
+
+<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:04:31 AM IST -->
+
+<!--te-->
+
+----
 
 # requirements
 

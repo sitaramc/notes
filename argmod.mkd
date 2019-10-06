@@ -8,6 +8,20 @@ it as shown in the two example programs here.
 over-engineered, program, until old age and better sense prevailed and I
 whittled it down to its bare essentials.)
 
+----
+
+<!--ts-->
+   * [example -- extracting youtube IDs from a filename](#example----extracting-youtube-ids-from-a-filename)
+   * [example -- extracting video size and duration](#example----extracting-video-size-and-duration)
+   * [some thoughts on alternatives](#some-thoughts-on-alternatives)
+   * [example -- wrapper for the "find" command](#example----wrapper-for-the-find-command)
+
+<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:07:56 AM IST -->
+
+<!--te-->
+
+----
+
 # example -- extracting youtube IDs from a filename
 
 Here's a simple example to start with.  I often have partially downloaded
