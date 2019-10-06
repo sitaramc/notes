@@ -6,9 +6,17 @@
 
 # stdin: as described above, or if not a pipe, will run `find -ls`
 [[ -t 0 ]] && { find -ls | $0 "$@"; exit $?; }
-# options:
-#   -d N (depth; default 2)
-#   -s s|f|d (default s) to sort by size, file count, directory count
+
+usage() {
+    cat <<'EOF'
+Usage:
+    dirstat -d N            # depth; default 2
+    dirstat -s s|f|d        # sort by size, file count, or directory count; default "s"
+EOF
+    exit 1
+}
+
+[[ $1 = -h ]] && usage
 
 # output: the output is lines like this
 #   <size> <#files> <#dirs> path
