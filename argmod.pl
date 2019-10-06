@@ -60,7 +60,8 @@ while (<>) {
     $args =~ s((?<![\h\S])$patt(?![\h\S]))($repl)g;
     # what about /i?  Do we care/cater to that?
 
-    my @c = @{^CAPTURE};
+    # -- seems to have problems in perl 5.30.0 ??? -- my @c = @{^CAPTURE};
+    my @c = ($1,$2,$3,$4,$5,$6,$7,$8,$9);
     unshift @c, 0;    # dummy 0-th element
     $args =~ s((?!\\)%(\d))($c[$1])g;
 
