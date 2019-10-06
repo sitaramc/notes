@@ -1,0 +1,55 @@
+#!/usr/bin/perl -s
+use warnings;
+use strict;
+use 5.10.0;
+
+use Data::Dumper;
+our ( $get, $set, $del, $keys );
+
+# simple key-value store in a plain text file, minimal features, suitable to
+# store arbitrary data for occasional use by scripts.
+
+# has no locking also; watch out!
+
+sub usage {
+    print STDERR "Usage:
+    skvdb get key
+    skvdb set key value
+    skvdb del key           # delete key
+    skvdb keys              # list all keys
+";
+    exit 1;
+}
+
+usage unless @ARGV;
+usage if $ARGV[0] eq '-h';
+
+my $DB = "$ENV{HOME}/.cache/skvdb";
+our %data;
+if   ( -f $DB ) { do $DB; }
+else            { %data = (); }
+
+sub flush {
+    my $dump = Data::Dumper->Dump( [ \%data ], [qw(*data)] );
+    open( OUT, ">", "$DB" ) or die "open: $!";
+    print OUT $dump;
+    close OUT or die "close: $!";
+}
+
+my ( $op, $k, $v ) = @ARGV;
+
+if ( $op eq 'get' ) {
+    exists $data{$k} or exit 1;
+    print $data{$k};
+} elsif ( $op eq 'set' ) {
+    $data{$k} = $v;
+    flush();
+} elsif ( $op eq 'del' ) {
+    exists $data{$k} or exit 1;
+    delete $data{$k};
+    flush();
+} elsif ( $op eq 'keys' ) {
+    print "$_\n" for sort keys %data;
+} else {
+    usage;
+}

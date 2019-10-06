@@ -1,0 +1,22 @@
+# skvdb -- simple key/value database
+
+I know there are a LOT of key value databases.  I need one for very low-volume
+use, that does not make ANY demands in terms of installation.
+
+Of course, I assume perl is present :)
+
+`skvdb` (I did say I am horrible at naming things, did I not?) is a simple
+perl program whose usage message is:
+
+    Usage:
+        skvdb get key
+        skvdb set key value
+        skvdb del key           # delete key
+        skvdb keys              # list all keys
+
+That's basically it.  It uses a fixed file (`~/.cache/skvdb`) as the database,
+and the data is stored in a very readable text format (basically a properly
+indented perl hash!)
+
+There are no real restrictions on the key and the value, or at least there
+shouldn't be.

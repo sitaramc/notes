@@ -1,0 +1,21 @@
+# ftail -- kinda like "tail -f" but across runs
+
+Quite often, while investigating something that takes time, I find the need to
+ask "what lines were added to this log file since the *last* time I looked at
+it".
+
+`ftail` does this.  Just give it a file name and it will show you all the data
+that was appended to it since the last time you ran the same command on that
+file.
+
+As you might expect, if the file is now *shorter* than it was the last time,
+we reset the "last seen offset" to 0, forcing it to output from the beginning
+of the file.  This is typical of the case where log files get rotated, for
+example.
+
+>   As a corollary, if the file was indeed truncated, and then it grew beyond
+>   the previously recorded size *before* you ran `ftail` on it, then `ftail`
+>   would never know.  You'd only see data after the last offset, even though
+>   all the data in the file is technically "new".  I do not think there is a
+>   *simple* solution for this, though I suppose checking the inode number
+>   *might* help.

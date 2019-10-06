@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Print the contents of a file since the last time we read it, kinda like
+# "tail -f" but across multiple runs, by remembering how big the file was the
+# last time we ftail-ed it.
+
+# If the file became smaller since the last time, we start from the beginning.
+
+# Uses "skvdb" -- a short perl program that provides a simple key-value
+# database for general use by shell scripts.
+
+[[ -z $1 ]] && exit 1
+
+# realpath and current size
+rp=$(realpath "$1")
+cs=$(stat -c %s "$rp")
+
+# offset (i.e., size of file last time we read it); default to 0 if key not found
+off=$(skvdb get "ftail:$rp")
+off=${off:-0}
+
+echo >&2 "off=$off, cs=$cs"
+[[ $cs -lt $off ]] && { echo >&2 "current size $cs < last read $off, resetting to 0"; off=0; }
+
+# oh boy if I ever switch to one of the BSDs because I finally tire of
+# Lennart's lunacy I'll be in deep shit using all these GNU specific flags!
+dd if="$rp" skip=$off iflag=skip_bytes status=none
+
+# record current size in skvdb
+skvdb set "ftail:$rp" $cs
