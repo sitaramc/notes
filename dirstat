@@ -18,7 +18,7 @@
 # Basically, think of ncdu, but with entries flattened out to a given depth
 # (default 2), and show file and directory counts along with size.
 
-# For more info, see https://github.com/sitaramc/tools/blob/master/dirstat.mkd
+# For more info, see https://github.com/sitaramc/notes/blob/master/dirstat.mkd
 
 DEPTH=2
 SORT=s

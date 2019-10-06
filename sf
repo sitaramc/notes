@@ -4,7 +4,7 @@ IFS=$'\n\t'
 # set -x
 # export PS4=':.$LINENO:'
 
-# please see https://github.com/sitaramc/tools/blob/master/argmod.mkd for details
+# please see https://github.com/sitaramc/notes/blob/master/argmod.mkd for details
 
 [[ ${1-} = -h ]] && {
     cat <<EOF

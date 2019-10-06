@@ -11,7 +11,7 @@ use Data::Dumper;
 # Modifies argument list based on the given rules.
 
 # For more details and a couple of examples, see:
-#   https://github.com/sitaramc/tools/blob/master/argmod.mkd
+#   https://github.com/sitaramc/notes/blob/master/argmod.mkd
 
 # A word about spaces within arguments: the assumption is that you don't have
 # spaces in any of the arguments presented as "pattern" and "replacement".

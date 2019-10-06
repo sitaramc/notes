@@ -16,7 +16,7 @@
 ----
 
 This is now, effectively, version 3 of my "batch queue" command, and it was
-finally deemed simple enough to move into my new "tools" repo than be on its
+finally deemed simple enough to move into my new "notes" repo than be on its
 own!
 
 Usage is very simple, and should fit all those posts I saw where people

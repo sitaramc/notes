@@ -116,7 +116,7 @@ directory on the VPS).
 
 Of course, not being smart enough to write ncurses stuff, `dirstat` is a
 single shot (i.e., non-interactive) command.  But, using the [try
-command](https://github.com/sitaramc/tools/blob/master/try) I can make it
+command](https://github.com/sitaramc/notes/blob/master/try) I can make it
 fairly interactive anyway, and pretty cheaply, in terms of amount of code I
 had to write.
 
