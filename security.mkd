@@ -53,7 +53,7 @@ I use 3 different userids on my desktop and laptop.
     zathura, and geeqie -- various media handling software).
 
 *   `g3`: trusted sites only
-    *   (example: my employer's company portal(s), my banks, github, gmail,
+    *   (example: my employer's company portal(s), my bank, github, gmail,
         ...)
     *   full private mode (nothing stored by the browser, ever)
     *   one site at a time (close the browser and restart it in order to use a
@@ -68,7 +68,7 @@ I use 3 different userids on my desktop and laptop.
 
 *   `sitaram`: email is handled only by `sitaram`.  When an attachment is
     opened, however, the handler (for pretty much everything except plain
-    text) is a script that pushes the file to `ff` and runs a special script
+    text) is a script that copies the file to `ff` and runs a special script
     to deal with it.
 
     URLs in emails are also handled the same way; I use a handler script that
@@ -84,7 +84,7 @@ I use 3 different userids on my desktop and laptop.
     encrypting them won't lose me anything.
 
 *   `g3` has very little role to play in email -- limited to the rare
-    occasions when I log on
+    occasions when I log on to gmail from an actual browser.
 
 ## documents and other non-text files
 
@@ -111,8 +111,8 @@ I use [pass](https://www.passwordstore.org/) -- Jason Donenfeld's excellent
 gpg-based tool to handle passwords.
 
 Naturally, I have a custom script on top :-) that lets me do things more
-conveniently.  This script is called within my muttrc to set the IMAP
-password.
+conveniently.  (For example, this script is called within my muttrc to set the
+IMAP password.)
 
 Many banks and other service providers send statements that are password
 protected, usually with some bullshit combination of 4 digits of this and 4

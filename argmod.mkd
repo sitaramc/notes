@@ -86,7 +86,7 @@ The final example is what in my personal toolbox is a command called "sf",
 which lets me use the find command much better than anything else I have seen
 (even though the new "fd" command is much faster at raw speed).
 
-"sf" lets me do things like this.
+"sf" (which has its own documentation [here](sf.mkd)), lets me do things like this.
 
 Find files modified less than 5 minutes ago:
 

@@ -4,19 +4,24 @@ Over the past couple of decades, I have used several Unix tools, and have
 amassed a pretty good collection of notes, tips, and tricks on many of them.
 I've also created several little tools for my own use.
 
-This repository tries to collect all the information on these tools and
-techniques that I deemed too small to merit their own repos.  (In fact, some
-of them did have their own repos, and in a couple of cases even some history,
-with several totally rewritten versions.  But they all gradually became
-smaller and simpler (as I became smarter??) until they qualified to be in this
-repo rather than have their own!)
+Over the next few weeks/months I hope to add those notes, cleaned up and made
+current, to this repo.
+
+I should mention that some of the tools in this repo did, at some time, have
+their own repos.  But they all gradually became smaller and simpler (as I
+became smarter??) so I moved many of them to this repo instead.  These repos
+are (so far):
+
+*   `bq`
+*   `active-aliases`
+*   `lineup`
 
 ----
 
 <!--ts-->
    * [external tools](#external-tools)
       * [vifm -- file manager with vim-like key bindings](#vifm----file-manager-with-vim-like-key-bindings)
-   * [my own toolbox](#my-own-toolbox)
+   * [my own tools](#my-own-tools)
       * [installation](#installation)
       * [compatibility / requirements](#compatibility--requirements)
       * [one-line descriptions](#one-line-descriptions)
@@ -59,7 +64,7 @@ eventually finding [vifm](https://vifm.info).
 It has some really nice features that I explore in
 [vifm.mkd](vifm.mkd).
 
-# my own toolbox
+# my own tools
 
 ## installation
 

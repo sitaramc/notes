@@ -109,8 +109,8 @@ of my VPSs was far larger than a week before:
         -rw-r--r--. 1 sitaram sitaram 76387520 Aug 15 05:32 elided-2019-08-15.tar
             [...]
 
-Simply running `tar -tvf elided-2019-08-14.tar | mydu -d 3` and `tar -tvf
-elided-2019-08-15.tar | mydu -d 3` on side by side windows showed me what the
+Simply running `tar -tvf elided-2019-08-14.tar | dirstat -d 3` and `tar -tvf
+elided-2019-08-15.tar | dirstat -d 3` on side by side windows showed me what the
 problem was (I had downloaded some documents and put them in the wrong
 directory on the VPS).
 
@@ -123,7 +123,7 @@ fairly interactive anyway, and pretty cheaply, in terms of amount of code I
 had to write.
 
 In fact the "documentation" for the try command consists of a video
-demonstrating its use in playing with `dirstat`; see [[try.webm]].
+demonstrating its use in playing with `dirstat`; see [try.webm](try.webm).
 
 # how to run it
 
@@ -164,9 +164,9 @@ on the output.  If you want to see all of the output, either use a pager like
 I'm lazy.  And the code is simple.  "Depth" is handled by simply saying "keep
 only `$DEPTH /-separated` fields" (literally, `cut -f1-$DEPTH -d/`).
 
-So if you run `find /usr -ls | mydu` (and since the default depth is 2, you
+So if you run `find /usr -ls | dirstat` (and since the default depth is 2, you
 will get only one line of output -- for `/usr`.  To go deeper, you either `cd
-/usr` then run `mydu`, or specify a depth greater than 2 with `-d`.
+/usr` then run `dirstat`, or specify a depth greater than 2 with `-d`.
 
 Just to be clear, with depth=2, "/usr/foo" becomes "/usr", because there's a
 slash at the start, you've already lost one field to that, so that leaves one

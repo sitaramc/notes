@@ -1,20 +1,5 @@
 # bq -- simple batch queueing command
 
-<!--ts-->
-   * [quick overview](#quick-overview)
-   * [workers](#workers)
-   * [tasks](#tasks)
-   * [status](#status)
-   * [cleanup](#cleanup)
-   * [using a different queue](#using-a-different-queue)
-   * [files in the QDIR](#files-in-the-qdir)
-
-<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:04:30 AM IST -->
-
-<!--te-->
-
-----
-
 This is now, effectively, version 3 of my "batch queue" command, and it was
 finally deemed simple enough to move into my new "notes" repo than be on its
 own!
@@ -31,6 +16,23 @@ this program, while also being very easy to use.
 The only reason I wrote this, despite knowing of task-spooler, is that I often
 work on machines where I am not allowed to install whatever I want, so having
 something that just uses bash is very useful.
+
+----
+
+<!--ts-->
+   * [quick overview](#quick-overview)
+   * [workers](#workers)
+   * [tasks](#tasks)
+   * [status](#status)
+   * [cleanup](#cleanup)
+   * [using a different queue](#using-a-different-queue)
+   * [files in the QDIR](#files-in-the-qdir)
+
+<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:04:30 AM IST -->
+
+<!--te-->
+
+----
 
 # quick overview
 

@@ -15,7 +15,7 @@ up right now!
     suffix to the number instead
 -   why does -size want lowercase k but uppercase M and G?
 -   while we're on the topic, who the hell uses "blocks" anymore?
--   and finally (tongue-in-cheek) why do the most common options so long and
+-   and finally (tongue-in-cheek) why are the most common options so long and
     tedious to type?
 
 But the most important thing `sf` does for me is sort the output by file mod
