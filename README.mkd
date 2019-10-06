@@ -1,15 +1,30 @@
-# Notes on various tools in my toolbox
+# Various tools in my toolbox -- notes and code
+
+<!--ts-->
+   * [tools](#tools)
+   * [compatibility / requirements](#compatibility--requirements)
+   * [one-line descriptions](#one-line-descriptions)
+      * [try](#try)
+   * [details (of some of the smaller ones)](#details-of-some-of-the-smaller-ones)
+
+<!-- Added by: sitaram, at: Fri 27 Sep 2019 05:52:59 AM IST -->
+
+<!--te-->
+
+----
 
 Over the past couple of decades, I have used several Unix tools, and have
 amassed a pretty good collection of notes, tips, and tricks on many of them.
-I've been meaning to put them all out on github or something, but sadly, much
-of my material is probably dated, or at least needs to be checked.  At the
-very least, it needs a good cleanup before I can do that.
+I've also created several little tools for my own use.
 
-A bit of a catch-22 there.
+This repository tries to collect all the information on these tools and
+techniques that I deemed too small to merit their own repos.  (In fact, some
+of them did have their own repos, and in a couple of cases even some history,
+with several totally rewritten versions.  But they all gradually became
+smaller and simpler (as I became smarter??) until they qualified to be in this
+repo rather than have their own!)
 
-Instead, I decided to start with something I've only just begun using, and add
-other stuff later.
+# external tools
 
 ## vifm -- file manager with vim-like key bindings
 
@@ -35,3 +50,96 @@ eventually finding [vifm](https://vifm.info).
 
 It has some really nice features that I explore in
 [vifm.mkd](vifm.mkd).
+
+# my own toolbox
+
+## installation
+
+Any or all of these can be installed simply by copying the corresponding
+script(s) to some place in your `$PATH`.  They're not meant to be any more
+complicated than that.
+
+## compatibility / requirements
+
+I've only tested these on Linux.  I only use `bash` (not interested in
+limiting myself to `sh`).
+
+Some of them may require a relatively recent perl and bash.
+
+I make good use of all the mod-cons; `fd`, `rg (ripgrep)`, and `fzf` to start
+with.
+
+I think somewhere in my scripts I use `sponge` from `moreutils`.
+
+Anything more specific should be mentioned in the markdown file corresponding
+to the specific tool in question (for example, `dirstat` uses GNU "datamash",
+and you'll see it mentioned in `dirstat.mkd`).
+
+## one-line descriptions
+
+### `try`
+
+`try` is an interesting use of `fzf`'s "preview" function.  You run it like:
+
+    try 'dirstat -d 1'
+
+or even just `try` and then type/modify the command you want to run.
+
+Try is the only tool in this toolbox that has a [video](try.webm) rather than
+a markdown file.
+
+<!--
+
+# details (of some of the smaller ones)
+
+-->
+
+# appendix A: other tools in my toolbox
+
+## map
+
+`map` is my replacement for xargs, at least until someone like BurntSushi or
+sharkdp writes something to replace it (as they did with ripgrep (grep) and fd
+(find) respectively!)
+
+Has only 3 options, and does so, so, much!
+
+It's just a bit bigger than the tools here, so I left it in its own repo: <https://github.com/sitaramc/map>
+
+# appendix B: really minor hacks...
+
+...that might nevertheless help someone.
+
+## `lineup`
+
+`lineup` is basically just:
+
+    sed -e 's/   */\t/g' | column -s$'\t' -t -o$'\t' | sed -e 's/\t/ \t/g' | expand -4
+
+IOW, it's just a wrapper over `column -t`, but with one important difference:
+you need at least two spaces to be considered a different field, just one
+space won't do.  (Of course, the output also preserves that property,
+otherwise it's not idempotent; you can't run `lineup` on the output of an
+earlier `lineup` and get consistent results).
+
+Here's example input:
+
+    name            one-line description
+    ----            --------------------
+    apples      healthy, juicy, fruit
+    red apples      well duh, apples that are, you know, red!
+
+after running `lineup` becomes:
+
+    name        one-line description
+    ----        --------------------
+    apples      healthy, juicy, fruit
+    red apples  well duh, apples that are, you know, red!
+
+(with `column -t` that would become:
+
+    name    one-line              description
+    ----    --------------------
+    apples  healthy,              juicy,       fruit
+    red     apples                well         duh,   apples  that  are,  you  know,  red!
+
