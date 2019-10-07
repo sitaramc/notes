@@ -1,0 +1,39 @@
+# mg -- multi-grep
+
+Long before [`fzf`](https://github.com/junegunn/fzf.vim) burst on the world
+stage, I needed the ability to search on multiple patterns, AND-ed together,
+as well as *negative* patterns (which would also be AND-ed).  I also needed
+the ability to search not just "line by line" but "paragraph by paragraph";
+i.e., treat the para as the unit of search rather just one line.
+
+`mg` was, and remains, a simple script to do that, plus a couple of other
+tricks that I find very useful.  The "Usage" message for `mg` is:
+
+    Usage:
+        mg [options] patt1 [patt2] [-patt3] ...
+
+    `mg` allows (a) multiple patterns, including negatives, a la `fzf` (except we
+    allow "-" or "!" as the negation prefix), (b) filtering based on paragraphs
+    instead of lines, and (c) taking filenames from STDIN.
+
+        -x  STDIN is a list of filenames, not data.  This is the only way you can
+            supply a list of filenames, because arguments are ALWAYS search terms.
+        -p  search and report by para instead of by line.  (Paragraphs are
+            separated by one or more blank lines).
+        -l  like grep's -l, but remember filenames only come from STDIN!
+
+Of course, it can't be interactive, like `fzf` is (I never really got the hang
+of curses!), but `mg` is a part of many of my personal scripts.
+
+I particularly use the "paragraph mode" a lot.  The notes you see in this repo
+are but a small fraction of my enormous collection of tips and tricks and
+longer personal notes and explanations of all kinds of things I care about,
+and 99 times out of a hundred, a paragraph search gets me everything I want
+right there in STDOUT, without me having to browse the actual file.
+
+>   (Sidenote: many search engines, have the notion of "near".  For instance,
+>   `foo ~~ bar` may, in some hypothetical search syntax, mean "foo within 10
+>   words of bar".  This of paragraph search as a slightly different form of
+>   that, where nearness is not measured by any notion of words, but of being
+>   in the same paragraph.  It isn't always *better* but for most of my needs
+>   it has turned out to be better.)
