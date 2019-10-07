@@ -4,8 +4,8 @@ Over the past couple of decades, I have used several Unix tools, and have
 amassed a pretty good collection of notes, tips, and tricks on many of them.
 I've also created several little tools for my own use.
 
-Over the next few weeks/months I hope to add those notes, cleaned up and made
-current, to this repo.
+Over the next few weeks/months I hope to add those notes, as well as most of
+my tools, cleaned up and made current, to this repo.
 
 I should mention that some of the tools in this repo did, at some time, have
 their own repos.  But they all gradually became smaller and simpler (as I
@@ -24,13 +24,14 @@ are (so far):
    * [my own tools](#my-own-tools)
       * [installation](#installation)
       * [compatibility / requirements](#compatibility--requirements)
-      * [one-line descriptions](#one-line-descriptions)
-         * [try](#try)
+      * [tools without their own documentation](#tools-without-their-own-documentation)
    * [appendix A: other tools in my toolbox](#appendix-a-other-tools-in-my-toolbox)
       * [map](#map)
    * [appendix B: really minor hacks...](#appendix-b-really-minor-hacks)
+      * [pasting commands](#pasting-commands)
+      * [colors](#colors)
 
-<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:04:34 AM IST -->
+<!-- Added by: sitaram, at: Mon 07 Oct 2019 06:52:42 PM IST -->
 
 <!--te-->
 
@@ -87,24 +88,25 @@ Anything more specific should be mentioned in the markdown file corresponding
 to the specific tool in question (for example, `dirstat` uses GNU "datamash",
 and you'll see it mentioned in `dirstat.mkd`).
 
-## one-line descriptions
+## tools without their own documentation
 
-### `try`
+Some of the tools don't come with an "mkd" file, so here are some pointers for
+their use if you're curious.
 
-`try` is an interesting use of `fzf`'s "preview" function.  You run it like:
+*   `try`
 
-    try 'dirstat -d 1'
+    `try` is an interesting use of `fzf`'s "preview" function.  Instead of an
+    "mkd", you get a [video](try.webm) to explain it :)
 
-or even just `try` and then type/modify the command you want to run.
+*   `fxp`
 
-Try is the only tool in this toolbox that has a [video](try.webm) rather than
-a markdown file.
+    See the section on "progress bar while copying files" in
+    [cli-tips.mkd](cli-tips.mkd).
 
-<!--
+*   `yturl`
 
-# details (of some of the smaller ones)
-
--->
+    See the section on extracting youtube IDs from a filename in
+    [argmod.mkd](argmod.mkd).
 
 # appendix A: other tools in my toolbox
 

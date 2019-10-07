@@ -20,7 +20,7 @@ happen!)
       * [qutebrowser versus firefox](#qutebrowser-versus-firefox)
       * [firejail](#firejail)
 
-<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:04:32 AM IST -->
+<!-- Added by: sitaram, at: Mon 07 Oct 2019 06:52:43 PM IST -->
 
 <!--te-->
 

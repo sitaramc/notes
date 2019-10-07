@@ -1,4 +1,4 @@
-# `lineup`
+# lineup
 
 `lineup` is basically just:
 

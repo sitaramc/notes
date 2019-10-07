@@ -31,7 +31,7 @@ the author's own vifmrc!)
    * [external commands](#external-commands)
    * [ouch!](#ouch)
 
-<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:07:27 AM IST -->
+<!-- Added by: sitaram, at: Mon 07 Oct 2019 06:52:47 PM IST -->
 
 <!--te-->
 

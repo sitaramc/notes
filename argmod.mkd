@@ -12,11 +12,12 @@ whittled it down to its bare essentials.)
 
 <!--ts-->
    * [example -- extracting youtube IDs from a filename](#example----extracting-youtube-ids-from-a-filename)
+   * [example -- parsing the output of diff -qr](#example----parsing-the-output-of-diff--qr)
    * [example -- extracting video size and duration](#example----extracting-video-size-and-duration)
    * [some thoughts on alternatives](#some-thoughts-on-alternatives)
    * [example -- wrapper for the "find" command](#example----wrapper-for-the-find-command)
 
-<!-- Added by: sitaram, at: Sun 06 Oct 2019 10:07:56 AM IST -->
+<!-- Added by: sitaram, at: Mon 07 Oct 2019 06:52:32 PM IST -->
 
 <!--te-->
 
