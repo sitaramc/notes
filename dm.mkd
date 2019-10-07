@@ -1,0 +1,33 @@
+# dm -- "daemonize" a process
+
+dm runs a process in the background, redirecting the combined STDOUT and
+STDERR to a file in ~/tmp/dm.
+
+Usage
+    dm cmd [args]   # run cmd with args
+    dm              # examine output directory
+    dm -c           # delete *.done files that already existed, then examine output directory
+
+Each running task is a file in the output directory, with the PID as the
+filename.
+
+When you examine the output directory, dm checks each file that looks like a
+PID to see if the corresponding process has exited, and, if so, it suffixes
+`.done` to the filename.  (Side note: this process is inherently a bit "iffy",
+especially if you don't check for a long time, because PIDs roll over pretty
+fast these days, but I don't know any other way to "key" a process.)
+
+Any time you run `dm -c`, files that were already processed to "done" state
+are deleted.  (That is, even if you always run `dm -c`, you still get at least
+one chance to examine the outputs of completed processes).
+
+Finally, the file manager, though it defaults to `vifm`, can be whatever you
+want; just put the command (+ any options you need) in the environment
+variable `BQ_FILEMANAGER`.
+
+>   (Side note: Why `BQ_FILEMANAGER` and not `DM_FILEMANAGER`?  Well, `dm` is
+>   kinda sorta "sister program" to `bq` ("batch queue", which you can find in
+>   the same directory).  BQ already uses BQ_FILEMANAGER for this and I don't
+>   see why I should define two variables which will probably have the same
+>   content anyway.)
+
