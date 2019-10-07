@@ -1,0 +1,32 @@
+# `lineup`
+
+`lineup` is basically just:
+
+    sed -e 's/   */\t/g' | column -s$'\t' -t -o$'\t' | sed -e 's/\t/ \t/g' | expand -4
+
+IOW, it's just a wrapper over `column -t`, but with one important difference:
+you need at least two spaces to be considered a different field, just one
+space won't do.  (Of course, the output also preserves that property,
+otherwise it's not idempotent; you can't run `lineup` on the output of an
+earlier `lineup` and get consistent results).
+
+Here's example input:
+
+    name            one-line description
+    ----            --------------------
+    apples      healthy, juicy, fruit
+    red apples      well duh, apples that are, you know, red!
+
+after running `lineup` becomes:
+
+    name        one-line description
+    ----        --------------------
+    apples      healthy, juicy, fruit
+    red apples  well duh, apples that are, you know, red!
+
+(with `column -t` that would become:
+
+    name    one-line              description
+    ----    --------------------
+    apples  healthy,              juicy,       fruit
+    red     apples                well         duh,   apples  that  are,  you  know,  red!

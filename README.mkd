@@ -29,7 +29,6 @@ are (so far):
    * [appendix A: other tools in my toolbox](#appendix-a-other-tools-in-my-toolbox)
       * [map](#map)
    * [appendix B: really minor hacks...](#appendix-b-really-minor-hacks)
-      * [lineup](#lineup)
 
 <!-- Added by: sitaram, at: Sun 06 Oct 2019 10:04:34 AM IST -->
 
@@ -123,36 +122,46 @@ It's just a bit bigger than the tools here, so I left it in its own repo: <https
 
 ...that might nevertheless help someone.
 
-## `lineup`
+## pasting commands
 
-`lineup` is basically just:
+Have you ever found it annoying that a lot of commands shown in website
+(including possibly mine) include the `$` prompt at the start?  Whatever the
+reason, it's annoying because you can't simply double-click the line in your
+browser, hit Ctrl-C, then hit Ctrl-V in your terminal; instead, you have to
+actually move the mouse over almost the whole line, carefully avoiding the
+`$`.
 
-    sed -e 's/   */\t/g' | column -s$'\t' -t -o$'\t' | sed -e 's/\t/ \t/g' | expand -4
+Well, not if you have an executable called `$` in your `$PATH`, containing
+just two lines:
 
-IOW, it's just a wrapper over `column -t`, but with one important difference:
-you need at least two spaces to be considered a different field, just one
-space won't do.  (Of course, the output also preserves that property,
-otherwise it's not idempotent; you can't run `lineup` on the output of an
-earlier `lineup` and get consistent results).
+    #!/bin/bash
+    "$@"
 
-Here's example input:
+:-)
 
-    name            one-line description
-    ----            --------------------
-    apples      healthy, juicy, fruit
-    red apples      well duh, apples that are, you know, red!
+(Obviously this own't work for things like `cd`, or setting environment
+variables, etc., so do pay attention to what the command is doing!)
 
-after running `lineup` becomes:
+## colors
 
-    name        one-line description
-    ----        --------------------
-    apples      healthy, juicy, fruit
-    red apples  well duh, apples that are, you know, red!
+Do you want to add color to your terminal output, but don't want to muck
+around with arcana like `^[32;1m` or whatever?  Just use git!  Here's a script
+I call "color":
 
-(with `column -t` that would become:
+    #!/bin/bash
 
-    name    one-line              description
-    ----    --------------------
-    apples  healthy,              juicy,       fruit
-    red     apples                well         duh,   apples  that  are,  you  know,  red!
+    _color() {
+        local color=$1
+        [ $color = reset ] || color="$color bold"
 
+        echo -n `git config --get-color "" "$color"`
+    }
+
+    _color $1; echo -n "$2"; _color reset
+
+Use it like this:
+
+    echo `color red ERROR:` file not found
+
+`man git-config` will tell you what colors are supported (plus you can also
+use RGB values in hex, like `#ff0ab3`).
