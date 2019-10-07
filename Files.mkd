@@ -1,0 +1,35 @@
+# Files -- hmm... how do I describe this?
+
+Yeah this is tough.  Let me try anyway.
+
+I often have to run a `diff -qr` between two directories, and end up with
+output like this:
+
+    $ diff -qr a b
+    Only in b: changelog
+    Only in a: CHANGELOG
+    Files a/install and b/install differ
+    Files a/src/commands/access and b/src/commands/access differ
+    ...many more lines like those above...
+
+Typically, I'd want to examine one or two of those differences in more detail,
+by running a `vimdiff` on them.
+
+But can you see how hellish it is to copy paste the two filenames into a
+`vimdiff` command?
+
+And I assure you it gets worse if any of those filenames have spaces in them.
+(Way back when I was younger and angrier, I used to say that people who use
+spaces in filenames should be shot, but that ship has sailed.  Sigh...!)
+
+Well, my solution is yet another example of using `argmod`, and it is a
+program called `Files`.  Yes, literally that, because I simply triple-click to
+select the *whole* line I am interested in, and paste it into the terminal.
+
+In other words, the command is literally
+
+    Files a/src/commands/access and b/src/commands/access differ
+
+and up pops vimdiff with the two filenames loaded.  Works even with spaces in
+filenames.  (Well, as long as one of thoe filenames does not have the string `
+and ` in the name I guess!)

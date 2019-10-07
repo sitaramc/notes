@@ -1,0 +1,27 @@
+#!/bin/bash
+shopt -s inherit_errexit
+set -euo pipefail
+IFS=$'\n\t'
+
+source `which argmod`
+# sourcing this gets you a function "_argmod"
+
+# "Files" is somewhat unique, in the sense that it is pasted from the
+# output of `diff -qr`, which does NOT quote the filenames if they have
+# spaces in them.  Extracting the filenames separately allows us to deal
+# with them; if you extracted them together, as "%1 %2", you wouldn't know
+# where one filename ended and the other began if either or both the filenames
+# had spaces in them.
+
+_argmod "$@" <<<"%% and %% differ => %1"; f1="${args[@]}"
+_argmod "$@" <<<"%% and %% differ => %2"; f2="${args[@]}"
+
+totalsize=$(wc -c "$f1" "$f2"| grep total | cut -f1 -d' ')
+#                 50..MB..
+[[ $totalsize -gt 50000000 ]] && {
+    ls -al  "$f1" "$f2"
+    cmp     "$f1" "$f2"
+    return
+}
+
+vimdiff "$f1" "$f2"

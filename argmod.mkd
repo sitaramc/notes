@@ -35,9 +35,18 @@ original URL from it.
 
 The argmod rules that do this for me are:
 
-    yturl (.*).part                         =>  yturl %1
-    yturl (.*)\.f\d+\.(.*)                  =>  yturl %1.%2
-    yturl .*-([^.]{10}.*)\.\w+$             =>  echo https://www.youtube.com/watch?v=%1
+    (.*).part                         =>  %1
+    (.*)\.f\d+\.(.*)                  =>  %1.%2
+    .*-([^.]{10}.*)\.\w+$             =>  echo https://www.youtube.com/watch?v=%1
+
+You can find the full code in `yturl` in this directory, also symlinked as
+argmod-example-1.sh.  Use it like this:
+
+    youtube-dl `yturl some-partial-file-qhQyhKNX6B9.mkv.part`
+
+# example -- parsing the output of `diff -qr`
+
+See [Files][Files.mkd] for more on this.
 
 # example -- extracting video size and duration
 
