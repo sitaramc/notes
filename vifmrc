@@ -1,0 +1,290 @@
+" vim: filetype=vim ts=24 fdm=expr fdl=0
+
+" HINTS:
+"   :!!ls -- using 2 !'s pauses
+"   :%s/foo/bar/ -- munges filenames!
+"   :tree (and then "zd" on ".git") is nice sometimes, to get a feel for what actually is in that tree!
+
+" ------------------------------------------------------------------------------
+" settings that need to be BEFORE .local
+
+colorscheme sitaram-user
+
+" ------------------------------------------------------------------------------
+" local settings
+
+source "$HOME/.config/vifm/vifmrc.local"
+
+" ------------------------------------------------------------------------------
+" basic settings
+
+set vicmd=vim
+
+" Trash Directory
+" I recommend not changing this until you are familiar with vifm.
+" This probably shouldn't be an option.
+set trash
+
+set history=100
+set fastrun
+set sortnumbers
+set undolevels=100
+set vimhelp
+set norunexec
+set ignorecase
+set smartcase
+set hlsearch
+set incsearch
+set scrolloff=4
+
+set dotdirs=rootparent
+set dotfiles
+set dirsize=nitems
+
+" ------------------------------------------------------------------------------
+" slightly advanced settings
+
+" Don't do too many requests to slow file systems
+if !has('win')
+    set slowfs=curlftpfs
+endif
+
+set timefmt=%F\ %T
+
+" Show list of matches on tab completion in command-line mode
+set wildmenu
+" Display completions in a form of popup with descriptions of the matches
+set wildstyle=popup
+" Display suggestions in normal, visual and view modes for keys, marks and
+" registers (at most 5 files).  In other view, when available.
+set suggestoptions=normal,visual,view,otherpane,keys,marks,registers
+
+set statusline="%A %7u %7g %7s %d %T (%7E) %{&sort}"
+set rulerformat='%2l / %S%[ +%x%]'
+set trashdir=%r/.vifm-Trash-%u,$HOME/.cache/vifm/trash
+
+set vifminfo=bmarks,bookmarks,dhistory,chistory,shistory,phistory,fhistory,registers,
+
+let &syncregs = $USER
+screen!
+
+" ------------------------------------------------------------------------------
+" custom commands
+
+" :com[mand][!] command_name action
+" The following macros can be used in a command
+" %a is replaced with the user arguments.
+" %c the current file under the cursor.
+" %C the current file under the cursor in the other directory.
+" %f the current selected file, or files.
+" %F the current selected file, or files in the other directory.
+"       note: this *includes* %D/
+" %b same as %f %F.
+" %d the current directory name.
+" %D the other window directory name.
+" %m run the command in a menu window
+
+" we start them with uppercase letters so when you hit ":<TAB>" they're at the top
+command! Tar tar cf %c.tar %c
+command! Tgz tar zcf %c.tgz %c
+command! Mkcd :mkdir! %a | cd %a
+
+command! xc :set viewcolumns=*{name}..,24{mtime}| zzzInternalXC %a
+command! xm :set viewcolumns=*{name}..,24{mtime}| zzzInternalXM %a
+command! xs :set viewcolumns=*{name}..,8{size}|   zzzInternalXS %a
+command! zzzInternalXC git log --name-only --format=%%n -- %d| CDUP=`git rev-parse --show-cdup` perl -lne 'print if /./ and s(^)($ENV{CDUP}) and -f and not $seen{$_}++' | head -%a %U
+command! zzzInternalXM find -type f -print0 | xargs -0 ls -tr | tail -%a | tac %U
+command! zzzInternalXS find -type f -print0 | xargs -0 ls -Sr | tail -%a | tac %U
+
+" ------------------------------------------------------------------------------
+" viewers and pre-viewers
+
+" HINT: use, f.e., ":f g" on an image to get geeqie to run (default is sxiv)
+
+" Pdf etc
+filextype *.epub,*.pdf,*.ps {zathura}zathura %f %i &, okular %f %i &,
+fileviewer *.epub $HOME/bin/preview-epub
+fileviewer *.pdf pdftotext -nopgbrk %c -
+
+" Audio
+filetype *.wav,*.mp3,*.flac,*.m4a,*.wma,*.ac3,*.og[agx] mpv %f %i &
+fileviewer *.mp3 mediainfo
+
+" Video
+filextype *.avi,*.mp4,*.wmv,*.3gp,*.ogv,*.mkv,*.mpg,*.mpeg,*.vob,
+        \*.fl[icv],*.m2v,*.mov,*.webm,*.ts,*.mts,*.m4v,*.r[am],*.qt,*.divx,
+        \*.as[fx]
+        \ {View using mpv}
+        \ mpv %f %i &,
+fileviewer *.avi,*.mp4,*.wmv,*.dat,*.3gp,*.ogv,*.mkv,*.mpg,*.mpeg,*.vob,
+        \*.fl[icv],*.m2v,*.mov,*.webm,*.ts,*.mts,*.m4v,*.r[am],*.qt,*.divx,
+        \*.as[fx]
+        \ mediainfo %c 2>&1
+
+" Web
+filextype *.html,*.htm
+        \ {Open with firefox}
+        \ firefox %f &,
+filetype *.html,*.htm links, lynx
+
+" Man page
+filetype *.[1-8] man ./%c
+fileviewer *.[1-8] man ./%c | col -b
+filetype *.[1-8].gz man ./%c
+fileviewer *.[1-8].gz man ./%c | col -b
+
+" Images
+filextype *.bmp,*.jpg,*.jpeg,*.png,*.gif,*.xpm,*.tif,*.tiff
+        \ {View in geeqie}
+        \ geeqie %f,
+        \ {mediainfo}
+        \ mediainfo %f %m 2>&1,
+fileviewer *.bmp,*.jpg,*.jpeg,*.png,*.gif,*.xpm,*.tif,*.tiff
+        \ bgee %c,
+" XXX doesn't seem to work: fileviewer *.jpg,*.png shellpic %c
+
+" GPG signature
+filetype *.asc
+        \ {Check signature}
+        \ !!gpg --verify %c,
+
+" zip files
+filetype *.zip
+        \ {Vim!}
+        \ vim %c,
+        \ {View contents}
+        \ unzip -l %c | less,
+        \ {Extract in %D}
+        \ unzip -d %D %c | less
+fileviewer *.zip,*.jar,*.war,*.ear,*.oxt unzip -l %c
+
+" tar files
+filetype *.tar,*.tar.bz2,*.tbz2,*.tgz,*.tar.gz,*.tar.xz,*.txz
+        \ {Vim!}
+        \ vim %c,
+        \ {View contents}
+        \ tar -tvf %c | less,
+        \ {Extract in %D}
+        \ tar -C %D -xf %c | less,
+fileviewer *.tar,*.tar.bz2,*.tbz2,*.tgz,*.tar.gz,*.tar.xz,*.txz tar -tvf %c
+
+" rare formats; only view
+fileviewer *.rar unrar v %c
+fileviewer *.7z 7z l %c
+
+" Office files
+filextype *.odt,*.doc,*.docx,*.ods,*.xls,*.xlsx,*.odp,*.ppt,*.pptx libreoffice %f &
+" ??? fileviewer *.doc catdoc %c
+fileviewer *.odt,*.doc,*.docx unoconv -f text --stdout %c
+fileviewer *.ods,*.xls,*.xlsx unoconv -f csv  --stdout %c
+
+" Everything else
+
+" NO: filetype * xdg-open
+" do not use this; if DISPLAY is unset (like in a remote connection), this
+" causes even vim to misbehave (contention between vim and vifm for terminal!)
+
+" Preview should syntax highlight if possible
+fileviewer *[^/] highlight -O xterm256 --force -s pablo %c
+
+" 'l' toggles showing a git log of entry (whether it is a directory or a file)
+nnoremap l :if &previewprg == '' | set previewprg='git -c color.status=always s; git log --stat --decorate=short --color -- %c 2>&1' | view! | else | set previewprg='' | view | endif<cr>
+
+" ------------------------------------------------------------------------------
+" Mappings
+
+" HELP: <Del>       -- delete selected files
+
+" HELP: VV  select  -- select all
+" HELP: J|K move    -- move cursor in other pane
+" HELP: o   display -- sort menu
+" HELP: ss  display -- sort by size
+" HELP: w   display -- preview mode toggle
+" HELP: W   display -- preview mode -- wrap toggle
+" HELP: x   xo      -- run xo on %c (NOT %f)
+" HELP: <|> display -- inc/dec pane width
+" HELP: SPC display -- select file and move down
+" HELP: cc1 display -- compare -- by contents, one pane, list dups
+" HELP: cc2 display -- compare -- by contents, two panes, list unique
+" HELP: cn1 display -- compare -- by name, one pane, list dups
+" HELP: cn2 display -- compare -- by name, two panes, list unique
+" HELP: rw  display -- switch windows to regular from custom
+" HELP: cd  nav     -- cd elsewhere
+" HELP: gr  find    -- files by content (grep)
+" HELP: //  find    -- files by name (locate, with a custom locateprg)
+" HELP: E   edit    -- selected files in gvim remote
+" HELP: cp  change  -- cp current file *with* parents to other side
+" HELP: dv  change  -- run vimdiff on %c %D/%c
+" HELP: dV  change  -- run vimdiff on %c %C
+" HELP: yd  extern  -- clip directory name
+" HELP: yf  extern  -- clip file name
+" HELP: sh  extern  -- start a shell
+" HELP: !   extern  -- :!! __ <cursor> %c
+" HELP: @   extern  -- :!!
+nnoremap <delete>   :!ls -ald %f; echo -n "remove these files? "; vifm-pause; rm -rf %f %n<cr>
+
+nnoremap VV :%select<cr>
+nnoremap <silent> J <space>j<space>
+nnoremap <silent> K <space>k<space>
+nnoremap o :sort<cr>
+" this one starts a bg task; wait a bit and run it again or just run "Ss" again
+nnoremap ss :%select<CR>ga:set sort=-size,+dir<cr>
+
+nnoremap w :view<cr>
+nnoremap W :set wrap!<cr>
+nnoremap x :!dm xo %c &<cr>
+" bloody thing does not work without the "&" (vifm waits for xo to finish, and
+" if you hit enter it forces xo to finish too!)
+nnoremap < <c-w>4<
+nnoremap > <c-w>4>
+
+nmap <space> tj
+
+nnoremap ccd1 :compare bycontents listdups     ofone<CR>
+nnoremap cnd1 :compare byname     listdups     ofone<CR>
+nnoremap ccu1 :compare bycontents listunique   ofone<CR>
+nnoremap cnu1 :compare byname     listunique   ofone<CR>
+nnoremap ccd2 :compare bycontents listdups     ofboth<CR>
+nnoremap cnd2 :compare byname     listdups     ofboth<CR>
+nnoremap ccu2 :compare bycontents listunique   ofboth<CR>
+nnoremap cnu2 :compare byname     listunique   ofboth<CR>
+
+nnoremap rw  :set viewcolumns=|regular<cr>
+
+nnoremap cd :cd<space>
+nnoremap gr :!vim "+Grep "<Left>
+
+set locateprg="find | grep -i %a | sort"
+nnoremap // :locate<space>
+
+" HINT: using "enter" will open it in a new gvim (for text-ish files anyway)
+nnoremap E :!gvim --remote-silent %f<cr>
+" Open file in the background using its default program
+" ??? nnoremap gb :file &<cr>l
+
+" nnoremap cp :!!cp -v -r --parents %f %D<CR>
+nnoremap dv :!vimdiff %c %D/%c<CR>
+nnoremap dV :!vimdiff %c %C<CR>
+
+nnoremap I cw<c-a>
+nnoremap A cw
+" nnoremap cc cw<c-u>
+
+nnoremap yd :!echo %d | xsel -b %i<cr>
+nnoremap yf :!echo %c:p | xsel -b %i<cr>
+
+nnoremap sh :shell<cr>
+nnoremap !  :!! __ %c<Left><Left>
+nnoremap @  :!
+
+nnoremap qq :quit<cr>
+
+" Example of standard two-panel file managers mappings
+nnoremap <f3> :!less -c %f<cr>
+nnoremap <f4> :edit<cr>
+nnoremap <f5> :copy &<cr>
+nnoremap <f6> :move &<cr>
+nnoremap <f7> :mkdir<space>
+nnoremap <f8> :delete<cr>
+
+nnoremap b  :bmarks

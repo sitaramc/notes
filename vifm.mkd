@@ -39,6 +39,11 @@ the author's own vifmrc!)
 
 # features I really like
 
+*   `:%s/foo/bar` to directly rename files!
+
+    >   (2019-11-10: I am ashamed to say I completely forgot about this and
+    >   only re-discovered it when reviewing my vifmrc for posting!)
+
 *   **undo**: I don't know if I've been living under a rock, but I've never
     seen a file manager with undo!  Is this common?
 
@@ -98,6 +103,10 @@ the author's own vifmrc!)
     starting with `%"`; those are for Windows).
 
     [cm]:https://vifm.info/vimdoc.shtml#vifm-macros "https://vifm.info/vimdoc.shtml#vifm-macros"
+
+*   **tree view**.  Run `:tree`, and then `zd` on any directories (such as
+    `.git`) you don't want to see, to get a nice overview.  You can even use
+    the `=` filter within this view to subset things down.
 
 *   **previewing directories**.  I like that when you turn on "preview"
     (`:view`, or whatever letter you map it to), directories show up with the
