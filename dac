@@ -1,0 +1,151 @@
+#!/bin/bash
+
+# dac -- dotfiles-and-configs
+
+# documentation:
+#   https://github.com/sitaramc/notes/blob/master/dac.mkd
+
+# reason I wrote this: don't be forced to push, propagate, and pull ALL
+# changes.  Files need not be identical, and you can push or apply a specific
+# change when you are ready to do so.
+
+# ----------------------------------------------------------------------
+
+# assumptions:
+# - there are no files with spaces in the names!
+# - this script is run from within the dac repo
+
+die() { echo >&2 "$@"; exit 1; }
+_HOST=${_HOST:-`hostname -s`}
+_DIST=${_DIST:-`. /etc/os-release; echo $ID`}
+
+# this is my list of default users; if other people start using this we can
+# work out a way to move this definition outside the script.  Note that
+# "system" is a special user whose "home" is "/" (this is where you store all
+# your /etc type stuff)
+[[ -z $1 ]] && set -- system sitaram root ff g3
+
+# the actual files could be in subdirectories named above, or variants like
+# "system-manjaro", for system files that belong only in a Manjaro machine, or
+# maybe "sitaram-work-lt", for files that only belong on my work laptop (whose
+# `hostname -s` is "work-lt").  You get the idea.
+
+# in addition, there is one subdirectory, "user", that contains files that
+# belong to all users on all machines.  Most dotfiles actually go there of
+# course.
+
+# ----------------------------------------------------------------------
+do_ONE() {
+    # arg 1: username of files that will be processed, so we can do a chown when needed
+    # arg 2: HOME directory that needs to be checked/diffed/updated
+    # arg 3 onward: relevant dac repo subdirectories
+
+    owner=$1; shift
+    home=$1; shift
+
+    for d; do
+        [[ -d $d ]] || continue
+        cd $d
+        for f in `find . -type f | cut -c3-`; do
+
+            # new file?  Create and chown, then get out
+            [[ -f $home/$f ]] || {
+                cp -v --parents $f $home
+                chown $owner:$owner $home/$f
+                continue
+            }
+
+            # no changes?  Get out
+            cmp -s $f $home/$f && continue
+
+            # the skiplist is a list of files where you already saw these two
+            # exact files, and even though they differ you chose to leave them
+            # as is.  So dac skips them instead of bothering you with a change
+            # you already saw.
+            grep -n . $f $home/$f | md5sum | grep -q -F -f - ~-/.skiplist &&
+                { echo "'$f' skipped"; continue; }
+
+            # THIS is the crux of this whole program, it allows me to keep
+            # changes forever, without being bothered by them every time I run
+            # dac.  As soon as EITHER file changes, the skiplist entry is not
+            # matched, and then of course dac will show me the diff again, so
+            # it's not exactly "forever".
+
+            # (Once in a while, you should delete the skiplist file so that
+            # you can revisit all the differences again, just in case some of
+            # them are more relevant or can be resolved now.)
+
+            # open up the two files and let the user make changes to either side as needed
+            vimdiff --cmd 'set shm=O' -c 0 $f $home/$f
+
+            cmp -s $f $home/$f && continue
+
+            # user chose to ignore any diffs remaining?  Add to skiplist
+            echo   $d/$f $home/$f          >> ~-/.skiplist
+            grep -n . $f $home/$f | md5sum >> ~-/.skiplist
+        done
+        cd - >/dev/null
+    done
+
+    # a note about vimdiff;
+    # - my vimrc has "set shm+=a", so it does not OVERRIDE the "O" we gave above
+    # - my vimrc also has mapped Q to ":qall" so I can quickly move on to the next
+    #   file if I don't want to make any changes to either of these two
+}
+
+_add() {
+    # this is just a convenience function; you can always add the files to the
+    # various subdirectories yourself if you like.
+
+    # see documentation for how to use this.
+
+    # grab the subdirectory name, and, if it contains a -host or -dist suffix,
+    # replace the suffix with the actual value for this box.
+    subdir="$1"; shift
+    subdir=${subdir/%-host/$_HOST}
+    subdir=${subdir/%-dist/$_DIST}
+
+    # for each file we've been given...
+    for fp; do
+        [[ $fp =~ ^/ ]] || { echo >&2 "'$fp' not an absolute path, skipping"; continue; }
+
+        # parse it into the first 2 components and all the rest
+        IFS=/ read empty a b c <<< "$fp"    # (the "empty" is to take care of the leading slash in $fp, which creates an empty first field)
+
+        # then figure out where we should "cd" to get those files and what the paths to add are
+        case $a in
+            root )  Cd=/root;       Path=$b/$c ;;
+            home )  Cd=/home/$b;    Path=$c ;;
+            * )     Cd=/;           Path=$a/$b/$c ;;
+        esac
+
+        # and finally add them
+        set -x
+        mkdir -p $subdir
+        ( cd $Cd ; cp -r --parents $Path ~-/$subdir )
+        set +x
+    done
+}
+
+[[ $1 == add ]] && {
+    shift;
+    _add "$@"
+
+    git status -s -b
+    echo "BE SURE TO add/commit/push NOW!"
+
+    exit
+}
+
+for u; do
+    home=`grep ^$u: /etc/passwd | cut -f6 -d:`
+
+    if [[ $u = system ]]; then
+        do_ONE  root    /              $u      $u-$_DIST      $u-$_HOST
+    else
+        do_ONE  $u      $home  user    $u      $u-$_DIST      $u-$_HOST
+    fi
+done
+
+git status -s -b
+echo "BE SURE TO add/commit/push if needed!"

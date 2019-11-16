@@ -1,0 +1,165 @@
+# dac -- "dotfiles and configs" manager
+
+There are hundreds, probably thousands, of dotfile managers around, from well
+known ones like GNU Stow and `vcsh` to "enterprisey" stuff like Ansible, to
+many more lesser known ones.
+
+<!--ts-->
+   * [the most important thing I need](#the-most-important-thing-i-need)
+   * [the basic idea](#the-basic-idea)
+   * [updating a set of files](#updating-a-set-of-files)
+      * ["in either direction"](#in-either-direction)
+   * [putting it on a new system](#putting-it-on-a-new-system)
+   * [adding new files](#adding-new-files)
+
+<!-- Added by: sitaram, at: Sat 16 Nov 2019 10:55:05 PM IST -->
+
+<!--te-->
+
+----
+
+# the most important thing I need
+
+I took a look at all the big ones, even tried out one or two for a bit, but
+none of them appeared to do the one thing I needed: **do not force a change if
+I don't want it right now**, whether it is committing a change **to** the
+repo, or accepting a change **from** the repo into the local filespace.
+
+And I need this to be pretty granular; in fact I use `vimdiff` to actually
+propagate changes.  No blindly copying files!  (Git people are used to keeping
+some changes **un**-committed; why do most dotfile managers seem to force you
+to commit and propagate the change?)
+
+By the way, this script does depend on vim, but that would be a trivial change
+to make if someone wants me to make it more generic.
+
+# the basic idea
+
+1.  Every file that we're interested in tracking, falls into one of these
+    categories:
+
+    -   any user on any system should have this file (most dotfiles fall into
+        this category)
+    -   this file belongs to some specific user.  (Note that `root` is a user
+        too!)
+    -   a "system" file; things like `/etc/ssh/sshd_config`, `/etc/sudoers`,
+        and so on
+
+2.  Within the second and third of those categories above, there *could* be
+    further divisions:
+
+    -   only for this distribution (Manjaro, Fedora, etc)
+    -   only for this specific host
+
+When dac runs, it checks all of these subdirectories in the dac repo, (if they
+exist) for files that it should compare against the corresponding file on the
+machine where you are processing this.  Specifically, the categories in bullet
+1 above are represented by the subdirectories (a) `user`, (b) `sitaram`,
+`root`, etc., and `system`.
+
+Bullet 2 gives you *additional* subdirectories like `system-manjaro`,
+`system-sita-work-lt`, or `sitaram-sita-home-lt` (where sita-home-lt and
+sita-work-lt are short hostnames), `root-sita-home-lt` and so on.
+
+Just to illustrate, here's a somewhat modified list from my dac repo (I always
+use two additional users, `ff` and `g3`; see
+[here](https://github.com/sitaramc/notes/blob/master/security.mkd) for more on
+that):
+
+    ff
+    ff-sita-home
+    ff-sita-work
+    g3
+    root
+    root-sita-home
+    root-sita-work
+    sitaram
+    sitaram-sita-home
+    sitaram-sita-work
+    system
+    system-fedora
+    system-manjaro
+    system-centos
+    user
+
+# updating a set of files
+
+Running `dac system root myusername` is usually sufficient.  If people use
+this script, I'd be happy to move the default list out of the code and work
+out some way in which it is supplied outside, so you can just run `dac`.
+
+Each file that differs from its parent, is shown using `vimdiff`.  (Same thing
+here: if people use it and want to remove the hardcoded vim dependency, I can
+fix that; just too lazy to do it if I am the only user!)
+
+Copy whatever changes you like (*in either direction*), and save the files.
+If the files are still different, then dac will put a hash of their current,
+**exact** contents in a skiplist so you won't see it next time you run it.
+
+You *will* see the files if either of them changes even a tiny bit of course,
+so it's quite safe.  Also, the skip list is plain text; you can manually
+remove lines from it if you wish to.  Or just delete the whole file to see
+"unskip" everything.
+
+## "in either direction"
+
+That phrase is important.  That is how changes you make on a system while
+using it, propagate back to the dac repo and then on to other systems.
+
+After each run of dac, you should see a `git status -s -b` run, so you know
+if you need to do a git commit/push etc.  Dac does not do all this for you.
+(It could, but again, I prefer it this way, so until people ask that's how it
+will stay!)
+
+# putting it on a new system
+
+This is pretty much the same as updating, because if dac finds some files
+missing, it will simply copy them over.  Any files that already existed on the
+new account (typical example: `~/.bashrc`), will show up in a vimdiff, and
+it's your call how you want to deal with it.
+
+# adding new files
+
+Adding new files is easy.  You either have a "user" file (i.e., it falls under
+`/home` or `/root`), or it is a "system" file.  So the subdirectory is,
+tentatively, `system` or the user name (like `sitaram` or `root`).
+
+Next, for "user" files, you decide if this file should go to all users on all
+machines, regardless, in which case the subdirectory is `user.  If yes, you
+can move to the next step, which is running `dac add`; see below.
+
+If that is not the case, then you decide if it should be specific to the
+distro running on this machine, or maybe even specific to this machine itself.
+In this case suffix `-dist` or `-host` to the subdirectory name you have so
+far.  (So, `system` may become `system-dist`, or `sitaram` may become
+`sitaram-host`).
+
+That's it; you can run the add command now.  For example, let's say this
+particular machine developed a keyboard problem, and you had to use xmodmap to
+use some other (unused) keys in place of the dead keys.  You'd run:
+
+    dac add sitaram-host /home/sitaram/.xmodmaprc
+
+to record the new file.
+
+(As before, you still need to add/commit/push.  Also, please supply a full
+path to the file being added!)
+
+As another example, let's say you're on your Manjaro laptop, and you wrote
+yourself a wrapper for `pacman`, the package manager tool, that incorporates
+`fzf` and lets you interactively search for packages before installing them.
+You might run:
+
+    dac add root-dist /root/bin/wrap-pm
+
+to record this file.
+
+Just to be clear, you **don't** have to use the actual hostname or the distro
+name in these two examples; dac will pick them up and use them.  For example
+the pacman wrapper will go into the `root-manjaro` subdirectory.
+
+Also, you can add entire directories this way too; you don't have to do it
+file by file.
+
+I don't see adding new files as something that happens a lot, so this should
+be fine.
