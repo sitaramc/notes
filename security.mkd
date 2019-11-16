@@ -38,7 +38,9 @@ I use 3 different userids on my desktop and laptop.
     things; see below.
 
 *   `sitaram` is the highest privileged user.  All code that I write or my
-    teams' code that I have to review goes here.
+    teams' code that I have to review goes here.  Anything plain text can be
+    opened here, but all binary formats (libreoffice, PDF, jpg, ...) are
+    delegated to `ff`.
 
     `sitaram` has keyed ssh access to `ff` (but not the other way around).
 
@@ -62,7 +64,10 @@ I use 3 different userids on my desktop and laptop.
         copied to `sitaram` (I just use `/tmp` as a holding area for this).
 
 *   `sitaram`: no web browsing, not even trusted sites like my employer's
-    portal or my bank.
+    portal or my bank.  The browser is set to a non-existant proxy to prevent
+    accidental use!
+
+(Do I need to mention that Flash is not even installed?)
 
 ## email
 
@@ -185,4 +190,5 @@ One tip: if you want to use additional files and/or programs, put them within
 the config directory for the most seamless experience.  For example, my
 qutebrowser config has a keyboard shortcut to send youtube URLs to `mpv` over
 a fifo.  Until I realised it's simplest to put that fifo in `~/.config/mpv`, I
-had a heck of a time trying to get firejail to be able to "see" that fifo!
+had a heck of a time trying to get mpv within firejail to be able to "see"
+that fifo!
