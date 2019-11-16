@@ -5,9 +5,9 @@
 # documentation:
 #   https://github.com/sitaramc/notes/blob/master/dac.mkd
 
-# reason I wrote this: don't be forced to push, propagate, and pull ALL
-# changes.  Files need not be identical, and you can push or apply a specific
-# change when you are ready to do so.
+# reason I wrote this: I prefer not to be forced to push, propagate, and pull
+# ALL changes.  I.e., files need not be identical, and you need not push or
+# apply a specific change until you are ready to do so.
 
 # ----------------------------------------------------------------------
 
