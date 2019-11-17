@@ -1,55 +1,59 @@
-#!/usr/bin/perl -s
-use warnings;
-use strict;
-use 5.10.0;
+#!/bin/bash
 
-use Data::Dumper;
-our ( $get, $set, $del, $keys );
+usage() {
+    cat <<-EOF
+	Usage:
+	    $0 get key
+	    $0 set key val
+	    $0 lock key info
+	    $0 unlock key
+	    $0 del key
+	    $0 listkeys
 
-# simple key-value store in a plain text file, minimal features, suitable to
-# store arbitrary data for occasional use by scripts.
+	Locking is co-operative.  Always check return code of "lock" command; if
+	it failed, wait and try again.  If it succeeded, don't forget to "unlock"
+	when done.  The "info" is any text that can identify the locker to another
+	process (or a human).
 
-# has no locking also; watch out!
-
-sub usage {
-    print STDERR "Usage:
-    skvdb get key
-    skvdb set key value
-    skvdb del key           # delete key
-    skvdb keys              # list all keys
-";
-    exit 1;
+	(Internally, "lock" is just "error out if key already exists, else set key
+	to the info given", and "unlock" is just "del"!)
+EOF
 }
 
-usage unless @ARGV;
-usage if $ARGV[0] eq '-h';
+die() { echo >&2 "$@"; exit 1; }
 
-my $DB = "$ENV{HOME}/.cache/skvdb";
-our %data;
-if   ( -f $DB ) { do $DB; }
-else            { %data = (); }
+DB=$HOME/.cache/skvdb;
+[[ -d $DB ]] || mkdir -p $DB $DB/.keys
+[[ -d $DB ]] || die "'$DB' not found";
 
-sub flush {
-    my $dump = Data::Dumper->Dump( [ \%data ], [qw(*data)] );
-    open( OUT, ">", "$DB" ) or die "open: $!";
-    print OUT $dump;
-    close OUT or die "close: $!";
-}
+cd $DB
 
-my ( $op, $k, $v ) = @ARGV;
+# convert arbitrary text in $2 into something that is a valid file name
+h2=$(echo -n "$2" | md5sum | cut -c1-32)
 
-if ( $op eq 'get' ) {
-    exists $data{$k} or exit 1;
-    print $data{$k};
-} elsif ( $op eq 'set' ) {
-    $data{$k} = $v;
-    flush();
-} elsif ( $op eq 'del' ) {
-    exists $data{$k} or exit 1;
-    delete $data{$k};
-    flush();
-} elsif ( $op eq 'keys' ) {
-    print "$_\n" for sort keys %data;
-} else {
-    usage;
-}
+case "$1" in
+    get )
+        [[ -f $h2 ]] && cat $h2 && exit 0
+        die "key '$2' hash $h2 not found"
+        ;;
+    set )
+        echo "$3" > $h2
+        echo "$2" > .keys/$h2
+        ;;
+    del )
+        [[ -f $h2 ]] && rm $h2 .keys/$h2
+        ;;
+    lock )
+        [[ -f $h2 ]] && die "already locked by `cat $h2`"
+        echo "$3" > $h2         # same as "set"
+        echo "$2" > .keys/$h2
+        ;;
+    unlock )
+        rm $h2 .keys/$h2        # same as "del"
+        ;;
+    listkeys )
+        cd .keys; grep . *      # TODO: find a better way to do this?
+        ;;
+    * )
+        usage;;
+esac

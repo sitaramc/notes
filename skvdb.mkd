@@ -3,20 +3,27 @@
 I know there are a LOT of key value databases.  I need one for very low-volume
 use, that does not make ANY demands in terms of installation.
 
-Of course, I assume perl is present :)
-
 `skvdb` (I did say I am horrible at naming things, did I not?) is a simple
-perl program whose usage message is:
+shell script whose usage message is:
 
     Usage:
         skvdb get key
-        skvdb set key value
-        skvdb del key           # delete key
-        skvdb keys              # list all keys
+        skvdb set key val
+        skvdb lock key info
+        skvdb unlock key
+        skvdb del key
+        skvdb listkeys
 
-That's basically it.  It uses a fixed file (`~/.cache/skvdb`) as the database,
-and the data is stored in a very readable text format (basically a properly
-indented perl hash!)
+    Locking is co-operative.  Always check return code of "lock" command; if
+    it failed, wait and try again.  If it succeeded, don't forget to "unlock"
+    when done.  The "info" is any text that can identify the locker to another
+    process (or a human).
 
-There are no real restrictions on the key and the value, or at least there
-shouldn't be.
+    (Internally, "lock" is just "error out if key already exists, else set key
+    to the info given", and "unlock" is just "del"!)
+
+That's basically it.
+
+Skvdb, in turn, uses the file system itself as a key-value store, munging the
+key with md5sum to make it suitable to use as a "file name".  All the files
+are stored in `~/.cache/skvdb`.
