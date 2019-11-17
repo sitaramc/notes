@@ -1,29 +1,35 @@
 # skvdb -- simple key/value database
 
+(2022-03-13) WARNING: program completely rewritten, including usage and location of key-value store
+
 I know there are a LOT of key value databases.  I need one for very low-volume
-use, that does not make ANY demands in terms of installation.
+use, that does not make ANY demands in terms of installation.  Well, assuming
+git is already installed anyway :)
 
 `skvdb` (I did say I am horrible at naming things, did I not?) is a simple
 shell script whose usage message is:
 
     Usage:
-        skvdb get key
-        skvdb set key val
-        skvdb lock key info
-        skvdb unlock key
-        skvdb del key
-        skvdb listkeys
+        skvdb get APPNAME key
+        skvdb set APPNAME key val
+        skvdb lock APPNAME key info
+        skvdb unlock APPNAME key
+        skvdb del APPNAME key
+        skvdb keys APPNAME
 
-    Locking is co-operative.  Always check return code of "lock" command; if
-    it failed, wait and try again.  If it succeeded, don't forget to "unlock"
-    when done.  The "info" is any text that can identify the locker to another
-    process (or a human).
+    APPNAME is basically a section name in git-config terms; lets you use the
+    same DB for multiple, unrelated, applications.
+
+    Lock and unlock are just syntactic sugar; not even "flock" style locking
+    is happening.  It's a simple convenience, and to be truly useful we'd also
+    need to wrap the whole script in "flock".
 
     (Internally, "lock" is just "error out if key already exists, else set key
     to the info given", and "unlock" is just "del"!)
 
-That's basically it.
+That's it.
 
-Skvdb, in turn, uses the file system itself as a key-value store, munging the
-key with md5sum to make it suitable to use as a "file name".  All the files
-are stored in `~/.cache/skvdb`.
+Skvdb, in turn, uses `~/.config/skvdb` as a key-value store, using `git
+config` to manipulate it.  It allows you to use *arbitrary* keys by munging
+the key you supply with md5sum to make it suitable to use as a "key" in
+git-config.

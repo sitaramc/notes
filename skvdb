@@ -3,57 +3,72 @@
 usage() {
     cat <<-EOF
 	Usage:
-	    $0 get key
-	    $0 set key val
-	    $0 lock key info
-	    $0 unlock key
-	    $0 del key
-	    $0 listkeys
+	    $0 get APPNAME key
+	    $0 set APPNAME key val
+	    $0 lock APPNAME key info
+	    $0 unlock APPNAME key
+	    $0 del APPNAME key
+	    $0 keys APPNAME
 
-	Locking is co-operative.  Always check return code of "lock" command; if
-	it failed, wait and try again.  If it succeeded, don't forget to "unlock"
-	when done.  The "info" is any text that can identify the locker to another
-	process (or a human).
+	APPNAME is basically a section name in git-config terms; lets you use the
+	same DB for multiple, unrelated, applications.
+
+	Lock and unlock are just syntactic sugar; not even "flock" style locking
+	is happening.  It's a simple convenience, and to be truly useful we'd also
+	need to wrap the whole script in "flock".
 
 	(Internally, "lock" is just "error out if key already exists, else set key
 	to the info given", and "unlock" is just "del"!)
 EOF
 }
 
-die() { echo >&2 "$@"; exit 1; }
+die()   {   echo >&2 "$@"; exit 1; }
 
-DB=$HOME/.cache/skvdb;
-[[ -d $DB ]] || mkdir -p $DB $DB/.keys
-[[ -d $DB ]] || die "'$DB' not found";
+_has()  {   git config -f $DB --get         $app.$hkey.key >/dev/null; }
+_get()  {   git config -f $DB --get         $app.$hkey.val           ; }
+_set()  {   git config -f $DB --replace-all $app.$hkey.key "$key"    ;
+            git config -f $DB --replace-all $app.$hkey.val "$val"    ; }
+_del()  {   git config -f $DB --unset-all   $app.$hkey.key           ;
+            git config -f $DB --unset-all   $app.$hkey.val           ; }
+_keys() {   git config -f $DB --get-regex ^$app | grep "\.key " | sed -e 's/ /./' | cut -f4 -d. ; }
 
-cd $DB
+# ----------------------------------------------------------------------
 
-# convert arbitrary text in $2 into something that is a valid file name
-h2=$(echo -n "$2" | md5sum | cut -c1-32)
+DB=$HOME/.config/skvdb;
+mkdir -p $HOME/.config;
+touch $DB;
 
-case "$1" in
+cmd=$1
+app=$2
+key="$3"
+val="$4"
+
+# user-supplied keys contain *arbitrary* text, but git config keys are limited
+# to what characters they may contain, so:
+hkey=$(echo -n "$key" | md5sum | cut -c1-32)
+# (We'd use base64, but git config does not even like the "="s at the end, and
+# "base64 -d" does not like it if you remove them.  Besides, it's nice to keep
+# git-config keys to a manageable *length* also!)
+
+# ----------------------------------------------------------------------
+
+case "$cmd" in
     get )
-        [[ -f $h2 ]] && cat $h2 && exit 0
-        die "key '$2' hash $h2 not found"
+        _has && _get && exit 0
+        die "key '$key' hash $hkey not found"
         ;;
     set )
-        echo "$3" > $h2
-        echo "$2" > .keys/$h2
-        ;;
+        _set ;;
     del )
-        [[ -f $h2 ]] && rm $h2 .keys/$h2
-        ;;
+        _del ;;
     lock )
-        [[ -f $h2 ]] && die "already locked by `cat $h2`"
-        echo "$3" > $h2         # same as "set"
-        echo "$2" > .keys/$h2
+        _has && die "already locked by `_cat`"
+        _set
         ;;
     unlock )
-        rm $h2 .keys/$h2        # same as "del"
-        ;;
-    listkeys )
-        cd .keys; grep . *      # TODO: find a better way to do this?
-        ;;
+        _del ;;
+    keys )
+        _keys ;;
     * )
-        usage;;
+        usage ;;
 esac
