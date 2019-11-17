@@ -3,7 +3,7 @@ shopt -s inherit_errexit
 set -euo pipefail
 IFS=$'\n\t'
 
-source `which argmod`
+source `type -P argmod`
 # sourcing this gets you a function "_argmod"
 
 # "Files" is somewhat unique, in the sense that it is pasted from the

@@ -1,6 +1,7 @@
 # Files -- hmm... how do I describe this?
 
-Yeah this is tough.  Let me try anyway.
+Yeah this is a very cool program but it is hard to explain.  Let me try
+anyway.
 
 I often have to run a `diff -qr` between two directories, and end up with
 output like this:
