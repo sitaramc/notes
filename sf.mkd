@@ -35,3 +35,5 @@ It doesn't help that I have *several* CentOS 7 servers (even some CentOS 6)
 that I have to occasionally work on, and I just cannot live without, for
 example, `sf -c -10d` (find all files whose inodes were changed less than 10
 days ago, printing the ctime in a sortable format along with the filename).
+
+(However, fd is getting better every day, so who knows...!)

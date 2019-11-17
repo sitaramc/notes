@@ -49,7 +49,7 @@ EOF
 # (this cannot be done by argmod, since there is no way to specify arbitrary logic)
 [[ -d ${1-} ]] || set -- . "$@"
 
-source `which argmod`
+source `type -P argmod`
 _argmod "$@" <<'EOF'
 
     # if the second argument does not begin with a hyphen, insert "-n"
