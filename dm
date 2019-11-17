@@ -3,6 +3,8 @@ use 5.10.0;
 use strict;
 use warnings;
 
+use Time::Piece;
+
 # dm -- "daemonize" a process
 
 # dm runs a process in the background, redirecting the combined STDOUT and
@@ -40,6 +42,7 @@ unless ($0 eq $ARGV[0]) {
 shift;
 
 open(STDOUT, ">", "$base/$$");
+say localtime()->strftime("%F %T");
 say join(" ", "+", @ARGV) . "\n";
 open(STDERR, ">&STDOUT");
 open(STDIN, "<", "/dev/null");

@@ -9,7 +9,9 @@ Usage
     dm -c           # delete *.done files that already existed, then examine output directory
 
 Each running task is a file in the output directory, with the PID as the
-filename.
+filename.  The file starts with the date and time the task was started, then
+one line showing the command that was used, then a blank line, followed by the
+combined STDOUT and STDERR of the command.
 
 When you examine the output directory, dm checks each file that looks like a
 PID to see if the corresponding process has exited, and, if so, it suffixes
