@@ -1,0 +1,33 @@
+# Search, edit, and create entries in a "notebook" directory
+
+(Basically a perl 1-liner, one fzf command, vim, and a bit of scaffolding!
+After several false starts with various complicated programs I realised that
+fzf had ` --read0`.  Woohoo; searching by **paragraph** is now trivial!)
+
+----
+
+## Search
+
+Entries are searched by **paragraph** using fzf (with all its magic!); the
+filename is included in the search, which is convenient.
+
+If the search fails, hit Ctrl-G to exit, otherwise you *may* still end up in
+the editor (that's how "create" works; see below).
+
+## Edit
+
+Same thing; just use the filename itself as a word and pick any line; it'll
+get you into the editor, and from there it's between you and your mad vim
+skills :)
+
+## Create
+
+Just type the filename you would like, hit enter, and you're in vim.
+
+The trouble comes if you're trying to add a file whose name is already
+satisfied by the search :-)  In that case you may have to manually go into the
+notebook directory and add one.
+
+(This does not happen to me because all my filenames end in ".mkd", So when I
+run "nb foo.mkd", even if "foo" was found in multiple places, it's unlikely
+that "foo.mkd" will be found so it works out.)
