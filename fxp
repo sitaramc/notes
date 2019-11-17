@@ -4,6 +4,9 @@ use strict;
 use 5.10.0;
 
 # fxp -- file transfer with progress
+print STDERR "\n\n";
+say STDERR join(" ", "fxp: rsync -avP", @ARGV);
+print STDERR "\n\n";
 
 # if STDOUT is NOT a terminal, we simply call rsync and get out of the way.
 exec("rsync", "-avP", @ARGV) unless -t 1;
@@ -20,8 +23,6 @@ open( RSYNC, "-|", "rsync", "-avP", @ARGV );
 
 my $buf = '';
 my ( $rc, $fn, $xfr, $prog, $stats ) = ('') x 5;
-
-print STDERR "\n\n";
 
 # no amount of cajoling will make perl accept both \r AND \n as "$/", so I had to resort to sysread!
 while ( $rc = sysread( RSYNC, $buf, 1, length($buf) ) ) {
