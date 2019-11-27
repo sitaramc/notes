@@ -78,6 +78,7 @@ do_ONE() {
             # open up the two files and let the user make changes to either side as needed
             vimdiff --cmd 'set shm=O' -c 0 $f $home/$f
 
+            # files are now identical?  Get out
             cmp -s $f $home/$f && continue
 
             # user chose to ignore any diffs remaining?  Add to skiplist
@@ -139,12 +140,14 @@ _add() {
 
 for u; do
     home=`grep ^$u: /etc/passwd | cut -f6 -d:`
+    echo "==== u=$u home=$home ===="
 
     if [[ $u = system ]]; then
         do_ONE  root    /              $u      $u-$_DIST      $u-$_HOST
     else
         do_ONE  $u      $home  user    $u      $u-$_DIST      $u-$_HOST
     fi
+    echo
 done
 
 git status -s -b
