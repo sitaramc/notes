@@ -1,0 +1,196 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use 5.10.0;
+
+# replacement for `pass`, once I realised how little of pass's features I was
+# actually using.
+
+# Usage:
+#   ppass show foo      # similar to plain `pass show foo` (no -c, -q, etc)
+#   ppass edit foo      # ditto, but edit using vim; see below for more on this
+#   ppass git [...]     # same as `pass git [...]`
+
+# ----------------------------------------------------------------------
+
+# caveat: this is vim specific.  If you're using some other editor, the actual
+# code change in this script is literally one word, but that's not the end of
+# it.  You'll have to figure out how to make your editor directly -- and
+# safely -- edit a gpg file.
+
+# NON-VIM people: you'll need to figure out how to tell your editor to work in
+# what is effectively "private editing mode" (to borrow a term from web
+# browsers).
+
+# NOTE that `pass` did not know how to do this either, so it punted by storing
+# the decrypted data in `/dev/shm`.  That's mostly good enough, except editors
+# may store (i.e., "leak") other bits of info in various places -- and the
+# more powerful the editor the more likely this will happen!  By hardcoding to
+# vim, and knowing what I have in my vimrc, I avoid all those leaks.
+
+# VIM people: please add the block of code that appears below to your vimrc,
+# changing the ID as needed.  This is IMPORTANT!
+
+#         if empty($GPG_KEYID)
+#             let $GPG_KEYID = 'me@example.com'
+#         endif
+#         augroup gpgedit
+#             au!
+#             au  BufReadPre,FileReadPre  *.gpg       set nobackup
+#             au  BufReadPre,FileReadPre  *.gpg       set noswapfile
+#             au  BufReadPre,FileReadPre  *.gpg       set noundofile
+#             au  BufReadPre,FileReadPre  *.gpg       set nowritebackup
+#             au  BufReadPre,FileReadPre  *.gpg       set viminfo=
+#             au  BufReadPre,FileReadPre  *.gpg       set sh=/bin/bash
+#             au  BufReadPost             *.gpg       :%!gpg2 -q -d
+#             au  BufReadPost             *.gpg       | redraw
+#             au  BufWritePre             *.gpg       :%!gpg2 -q -e --no-encrypt-to --no-default-recipient -r $GPG_KEYID -a
+#             au  BufWritePost            *.gpg       u
+#             au  VimLeave                *.gpg       :!clear
+#         augroup END
+
+# ----------------------------------------------------------------------
+
+# If this directory exists, it is assumed to have all the right stuff.
+$ENV{PPASS_DIR} ||= "/home/sitaram/.config/ppass";
+unless (-d $ENV{PPASS_DIR}) {
+    system("mkdir", "-p", $ENV{PPASS_DIR});
+    chdir $ENV{PPASS_DIR};
+    system("git init");
+    system("echo '*.gpg diff=gpg' > .gitattributes");
+    system("git config --local diff.gpg.binary true");
+    system("git config --local diff.gpg.textconv 'gpg2 -q -d'");
+}
+
+# ----------------------------------------------------------------------
+# flush gpg agent and get out if arg-1 is 'flush'
+
+if (@ARGV and $ARGV[0] eq 'flush') {
+    system("pkill -HUP -f gpg-agent");
+    say STDERR "flushed";
+    exit 0;
+}
+
+# ----------------------------------------------------------------------
+# show, edit, git; the only `pass` commands I use, with only the features I use!
+
+sub _show {
+    chdir $ENV{PPASS_DIR};
+    system("gpg2", "-q", "-d", "$_[0].gpg") and return 1;
+    return 0;
+}
+
+sub _edit {
+    chdir $ENV{PPASS_DIR};
+    $_[0] .= ".gpg";
+    # remember shell truth from system() is opposite of perl truth
+    system("vim", @_) or
+        system(qw(git add -A .)) or
+        system(qw(git commit -a -m), "ppass edit $_[0]") or
+        system(qw(git status -s -b)) or
+        return 0;
+
+    return 1;
+}
+
+sub _git {
+    chdir $ENV{PPASS_DIR};
+    system("git", @_) and return 1;
+    return 0;
+}
+
+# ----------------------------------------------------------------------
+# main; dispatch
+
+if (@ARGV) {
+    if ($ARGV[0] eq 'show') {
+        exit _show($ARGV[1]);
+    } elsif ($ARGV[0] eq 'edit') {
+        shift;
+        exit _edit(@ARGV);
+    } elsif ($ARGV[0] eq 'git') {
+        shift;
+        exit _git(@ARGV);
+    }
+}
+
+# ----------------------------------------------------------------------
+# main; gpc
+# this is the bulk of this script (i.e., what used to be `gpc`)
+
+# Usage:
+#   ppass               # key = domain name from 'xsel -b'
+#   ppass -xyz          # key = domain name from 'xsel -b', with selector '-xyz'
+#   ppass foo           # key = foo
+#
+# for each key, a 3-element row is returned: key, user, pass.
+#
+# middle-click      username
+# ctrl-v            password
+# (after 9 seconds, ctrl-v is cleared to 'foo')
+
+my $CLIP_TIME = 9;
+
+my ($key);
+
+# here's how this works:
+#   -   if arg-1 is not supplied, or is a "selector" (see below),
+#   -   then
+#       -   get the domain name from `xsel -b`
+#       -   pull out the last two components (i.e., https://www.google.com/mail/foo/bar --> google.com)
+#           -   three components if the last 2 are "co.in"
+#       -   if a selector was givem append it (e.g., google.com -> google.com-2)
+#   -   else arg-1 is the key
+#   -   now find a line in `ppass show pswd` that starts with the key,
+#       followed by a tab.  This contains the userid and the password, and so on.
+
+# ----------------------------------------------------------------------
+
+# get the domain name from xsel (you would have Ctrl-C'd the URL line before
+# running ppass), and extract the last two components.  If a selector was
+# provided, suffix that to the key (this lets you have multiple userids on the
+# same service).
+if (not @ARGV or $ARGV[0] =~ /^-/) {
+    $key = `xsel -b -o`;
+    die "bad domain '$key'" unless $key =~ s(^https://([^/]+).*)($1);
+    my @parts = split /\./, $key;
+    die "bad domain '$key'" unless @parts >= 2;
+    $key = "$parts[-2].$parts[-1]";
+    $key = "$parts[-3].$key" if $key eq "co.in";
+    $key .= ( shift || '');
+    say STDERR "debug: domain+selector is '$key'";
+} else {
+    $key = shift;
+}
+
+# now grab the correct password line.  At the moment we're not checking if
+# more than one line matches; we just use the first one that we get.
+my $pswd;
+($pswd) = map { s/$key\t//; $_ } grep { /^$key\t/ } `ppass show pswd`;
+die "did not find key '$key'" unless $pswd;
+# split it to get the userid, password
+my ($u, $p) = split /\t/, $pswd;
+
+# special case: if STDOUT isn't a tty, the caller is muttrc or something
+# similar; just print the damn password for them to capture, and get out.
+unless ( -t STDOUT ) {
+    say $p;
+    exit 0;
+}
+
+# prepare the clipboard outputs and print
+open(XP, "|-", "xsel -p -i") or die "open XP failed: $!";
+open(XB, "|-", "xsel -b -i") or die "open XB failed: $!";
+
+print XP $u; close XP;          # middle-click
+print XB $p; close XB;          # ctrl-v
+
+# countdown and flush the password after $CLIP_TIME seconds
+for (my $i = $CLIP_TIME; $i; $i--) {
+    print STDERR "$i ";
+    sleep 1;
+}
+say STDERR "";
+system("echo 'TOO LATE!' | xsel -b -i");
+
+exit 0;

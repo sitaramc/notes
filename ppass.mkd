@@ -1,0 +1,128 @@
+# ppass -- barebones `pass` replacement
+
+I'd been using [`pass`](https://www.passwordstore.org/) for several years,
+with a wrapper around it that puts the userid in the primary selection (`xsel
+-p`) and the password in the clipboard selection (`xsel -b`), so I can
+`middle-click` in the userid field and `Ctrl-V` in the password field.
+
+More importantly from a security point of view, this wrapper could take a URL
+from the clipboard (I have to press `Ctrl-C` in the URL bar before running the
+wrapper), parse it to get the actual domain name, and use that as the key to
+get the right userid and password.  Short of U2F and it's fancy crypto, this
+is pretty good phishing protection.
+
+Naturally, this meant that my password files needed to be in a specific
+format; I chose a very simple `domainname TAB userid TAB password` for this.
+
+One day I saw a reddit post from someone claiming lots of "issues" (no idea if
+they were actual issues or just from some "best practices" checklist
+violations which don't necessarily matter in context) with the `bash` code in
+`pass`, and offering a much more bare-bones implementation.
+
+This got me thinking, and I realised I was not using *any* of `pass`'s
+features.  Literally the only commands I was using was `pass show` (*without*
+any of the optional flags `-c` or `-q`), `pass edit`, and `pass git`.
+
+And so my wrapper took on a bit more responsibility, and I removed `pass`.
+
+(I must say that despite that, Jason is still "God"; I could not live without
+[`wireguard`](https://www.wireguard.com/), but that is not relevant to *this*
+document!)
+
+# Usage
+
+Usage is simple.  `ppass show foo` will be exactly what `pass show foo` would
+do, except there are no optional flags.  Same with `edit`.  `ppass git` also
+works the same.
+
+The difference comes when the first word is not `show`, `edit`, or `git`.
+Then, it derives a "domain name" to search a specific file called `pswd`,
+looking for lines of the form `domainname<TAB>username<TAB>password`, and
+picks up the first one for processing.
+
+What is the `domain name`?  If an argument was supplied at all, it is taken to
+be the domain name.  Otherwise it looks in the clipboard (`xsel -b`) for a
+full **https** URL, strip all but the last two components of the hostname part
+of the URL, and use that.  (One minor exception is if this turns out to be
+`co.in`, it will pick up one more component; you can surely imagine why it
+does that, and I can certainly see generalising it to other similar domains if
+needed).
+
+# Caveats
+
+This is X specific, and Vim-specific.  I would not know how to secure any
+other editor; if you can contribute equivalent settings (viz., "private
+editing mode", to borrow a phrase from web browsers) for other editors, I'd be
+happy to add them in to this document.
+
+Vim users: please see below for a highly recommended set oflines you should
+add to your `~/.vimrc` or its descendents.
+
+NOTE that `pass` did not know how to do this either, so it punted by storing
+the decrypted data in `/dev/shm`.  That's mostly good enough, but I believe
+the settings below go much further.
+
+    " change the ID below as needed
+    if empty($GPG_KEYID)
+        let $GPG_KEYID = 'me@example.com'
+    endif
+    augroup gpgedit
+        au!
+        au  BufReadPre,FileReadPre  *.gpg       set nobackup
+        au  BufReadPre,FileReadPre  *.gpg       set noswapfile
+        au  BufReadPre,FileReadPre  *.gpg       set noundofile
+        au  BufReadPre,FileReadPre  *.gpg       set nowritebackup
+        au  BufReadPre,FileReadPre  *.gpg       set viminfo=
+        au  BufReadPre,FileReadPre  *.gpg       set sh=/bin/bash
+        au  BufReadPost             *.gpg       :%!gpg2 -q -d
+        au  BufReadPost             *.gpg       | redraw
+        au  BufWritePre             *.gpg       :%!gpg2 -q -e --no-encrypt-to --no-default-recipient -r $GPG_KEYID -a
+        au  BufWritePost            *.gpg       u
+        au  VimLeave                *.gpg       :!clear
+    augroup END
+
+# Other Details
+
+The script uses `~/.config/ppass` as the directory; it will create it and set
+it up with the correct `.gitattributes` and `.git/config` settings if it is
+empty.  You can override it with the environment variable `PPASS_DIR`.
+
+Every time you edit a password file, it will commit it.  Pushing the commits
+up is your job.
+
+It also has a convenience feature: calling it with `flush` as the only
+argument will flush the gpg-agent, forcing the next use to ask for the
+passphrase(s) again.
+
+By default, after 9 seconds, the password is removed from the clipboard,
+replaced by a mildly taunting `TOO LATE!`.  You can vary that time using the
+environment variable `CLIP_TIME`.
+
+# Password File and Format
+
+The password file is assumed to be called `pswd`; you can create / edit it
+with `ppass edit pswd`.  The format of entries is like this:
+
+    google.com<TAB>sitaramc<TAB>some-password
+
+and those are hard tabs.  (Vimmers: a modeline setting `ts=24` or some such
+number, is strongly recommended).
+
+If, like me, you have multiple accounts on some domain, you can do this:
+
+    google.com<TAB>sitaramc<TAB>some-password
+    google.com-2<TAB>sitaramcc<TAB>some-other-password
+
+When I am at the login screen, having hit `Ctrl-C` on the URL bar, instead of
+running just `ppass` in my terminal, I would run `ppass -2`.  That will pick
+up the entry with the `-2` suffix to the domain name detected, and would thus
+login to my second account (`sitaramcc` instead of `sitaramc`).  The suffix
+can be anything you like, but should start with a hyphen.
+
+# cloning the repo to a new system
+
+When you clone the repo to a new system, you will also need to run the
+following commands in that newly cloned repo, to make everything work fine:
+
+    git config --local diff.gpg.binary true
+    git config --local diff.gpg.textconv 'gpg2 -q -d'
