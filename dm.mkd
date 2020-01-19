@@ -1,12 +1,12 @@
 # dm -- "daemonize" a process
 
 dm runs a process in the background, redirecting the combined STDOUT and
-STDERR to a file in ~/tmp/dm.
+STDERR to a file in `~/tmp/dm`.
 
-Usage
-    dm cmd [args]   # run cmd with args
-    dm              # examine output directory
-    dm -c           # delete *.done files that already existed, then examine output directory
+    Usage
+        dm cmd [args]   # run cmd with args
+        dm              # examine output directory
+        dm -c           # delete *.done files that already existed, then examine output directory
 
 Each running task is a file in the output directory, with the PID as the
 filename.  The file starts with the date and time the task was started, then
