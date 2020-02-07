@@ -103,8 +103,8 @@ _add() {
     # grab the subdirectory name, and, if it contains a -host or -dist suffix,
     # replace the suffix with the actual value for this box.
     subdir="$1"; shift
-    subdir=${subdir/%-host/$_HOST}
-    subdir=${subdir/%-dist/$_DIST}
+    subdir=${subdir/%-host/-$_HOST}
+    subdir=${subdir/%-dist/-$_DIST}
 
     # for each file we've been given...
     for fp; do
