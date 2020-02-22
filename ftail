@@ -26,5 +26,6 @@ echo >&2 "off=$off, cs=$cs"
 # Lennart's lunacy I'll be in deep shit using all these GNU specific flags!
 dd if="$rp" skip=$off iflag=skip_bytes status=none
 
-# record current size in skvdb
-skvdb set "ftail:$rp" $cs
+# record current size in skvdb (unless in debug mode)
+[[ -z $D ]] && skvdb set "ftail:$rp" $cs
+[[ -n $D ]] && echo >&2 "not setting 'ftail:$rp' to $cs"
