@@ -167,7 +167,15 @@ if (not @ARGV or $ARGV[0] =~ /^-/) {
 # more than one line matches; we just use the first one that we get.
 my $pswd;
 ($pswd) = map { s/$key\t//; $_ } grep { /^$key\t/ } `ppass show pswd`;
-die "did not find key '$key'" unless $pswd;
+unless ($pswd) {
+    ($pswd) = map { s/\t.*\n//; $_ } grep { /^\S+\.$key\t/ } `ppass show pswd`;
+    if ($pswd) {
+        die "did not find key; did you mean: '$pswd'?";
+    } else {
+        die "did not find key '$key'";
+    }
+}
+chomp($pswd);
 # split it to get the userid, password
 my ($u, $p) = split /\t/, $pswd;
 
