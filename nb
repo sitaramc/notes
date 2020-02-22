@@ -46,11 +46,15 @@ cd ~/.notebook
 set -o pipefail
 # we need this to know whether the user hit Crl-G
 
-x=$(perl -ne '$_ =~ s/\n/\0/ if $_ eq "\n" or eof; print "$ARGV:$.:$_"; close ARGV if eof' `fd -L -t f` \
+# no arguments?  just print the top level files/dirs
+[[ -z $1 ]] && exec /bin/ls -1
+
+x=$(perl -ne '$_ =~ s/\n/\0/ if $_ eq "\n" or eof; print "$ARGV:$.:$_"; close ARGV if eof' `find -L -type f|cut -c3-` \
     | fzf -q "$*" \
+        --tac \
         --read0 \
         --color=hl:12,hl+:12 \
-        --preview-window=top:75% \
+        --preview-window=wrap:top:75% \
         --preview="echo {}|cut -d: -f3-" \
     | head -1 \
     | cut -f1-2 -d:
@@ -69,4 +73,4 @@ fi
 
 # search succeeded; just open the file at the right place
 IFS=: read f l <<< "$x"
-vim $f +$l
+vim $f +$l +/$1
