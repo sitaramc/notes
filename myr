@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# my version of Joey Hess's "mr".  Clearly it's a bit shorter ;-)
+
+# since this is for MY use, there will be no directories with spaces in them!
+
+# custom commands are handled by adding them to ~/.gitconfig if they're
+# global, or to the repo's .git/config if they're repo specific.  But you knew
+# that already, right?
+
+[[ -z $1 ]] && {
+    cat <<EOF
+    # register a repo
+    cd some-git-dir; $0 register
+
+    # run a git command on all registered repos in and below PWD
+    $0 some-git-command
+
+    # edit the registry file
+    $0 edit
+EOF
+    exit 1
+}
+
+die() { echo >&2 "$@"; exit 1; }
+CONF=$HOME/.config/myr.config
+[[ -f $CONF ]] || { touch $CONF; echo "created '$CONF'"; }
+
+case $1 in
+    edit )
+        vim $CONF
+        ;;
+    register )
+        rp=$(realpath .)
+        grep -q "$rp\$" $CONF && die "'$rp' already registered"
+
+        echo $rp                                                >> $CONF
+        git config --get-regexp remote.*.url | column -t |
+            sed -e 's/^/#   /'                                  >> $CONF
+        echo                                                    >> $CONF
+        ;;
+    * )
+        od=`realpath .`
+        for gr in `grep ^/ $CONF | sort`; do
+            [[ $gr =~ $od ]] || continue
+            cd $gr
+            echo "======> $gr"
+            git "$@"
+            echo
+        done
+        ;;
+esac

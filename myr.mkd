@@ -1,0 +1,26 @@
+# register and manage multiple git repos
+
+This is my version of Joey Hess's "mr".  Clearly it's a bit shorter ;-)
+
+It has only 2 commands: `register` a repo, and `edit` the file containing
+registrations.  Any other command is considered a git command and is run on
+all registered repos which are under `$PWD`.
+
+If you want to add custom commands, just add them to the git config file
+(either the global one in `~/.gitconfig` or the one inside the repo in
+question).
+
+Here's what I most often use this for:
+
+*   `myr GC`, where `GC` is defined in git config as the following alias:
+
+        GC = "!f() { git reflog expire --all --expire=now; git gc --aggressive --prune=now; }; f"
+
+*   `myr UP`, where `UP` is defined in git config as:
+
+        UP      = "!f() { umask 022; pwd; git pull; git diff --quiet ORIG_HEAD.. || gitk ORIG_HEAD..            ; }; f"
+
+    This is how I upgrade vim plugins (I prefer to just clone them all into
+    `~/.vim/pack/common/start` rather than use a plugin manager like vundle or
+    pathogen).
+
