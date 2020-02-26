@@ -1,0 +1,174 @@
+% my vim setup
+
+<!-- vim: set ts=24 fdm=expr fdl=0: -->
+
+This is not a VIM-style help file, it's only meant to be a memory jogger for
+me, not *documentation*.
+
+TODO: make \hh simply open this file in a new tab instead of mucking around
+with grep and whatnot.
+
+META:
+-   vim comes with ":helpgrep"
+-   fzf enables ":Helptags"
+-   when looking at long output (like ":map"), run it as ":Redir :map"
+    -   (won't work for external commands, watch out!)
+
+LEADER is probably "\"; we'll denote it by "L" in this document.
+
+# general mappings
+
+## Files, Buffers, Windows
+
+        F3, qq, ^\q             :q, qall, q alt screen
+        F8, F7, Tab, \o         :n, :N, ^W^W, ^Wo
+        F9, LF9, F10, LF10      :w, wall, x, xall
+
+        :VD patt                basic "find file and edit", if fzf-vim not installed
+
+## Environment
+
+        :cd.                    cd to directory of current file
+
+## Movement and display
+
+        Space, b, F2, \\        ^F, ^B, wrap!, zt
+        ^J/^K                   next/prev fold, closing all others
+        -                       toggle fold open/close (_ for all)
+        ^_                      cycle fold depth for markdown
+        F5                      foldmethod manual<->indent
+
+## Editing
+
+        \P, \jl, \sq            toggle paste, join lines, cat --squeeze-blank
+        ^-Arrow                 move paras/visual blocks (^-L/^-R won't work on my Xfce)
+        ^V^Vd/t/-               insert date, time, 70 dashes
+        ^\=                     inline calculator (i: 'Word', v: vsel)
+
+## Formatting
+
+        \\                      (ins) format para, go back to insert mode
+
+## Development and documentation
+
+        \db                     ignore whitespace in diff mode
+        Ctrl-]                  tags (N: ctags, V: stags)
+        \]X                     X = d, t, c, l
+                map [ and ] for diff, tag, clist, llist
+        \D, F1                  DiffOrig, spellcheck
+        F6/F6/F3                open a terminal, switch term mode, Ctrl-D
+        F1 (ins mode)           insert date, time, 4 spaces; stay in insert mode
+
+## Search and highlight
+
+        z/, ^N                  search open folds and headers
+        #                       just set @/, don't jump anywhere
+        :VG patt [-w] [subdir]  search all files in subdir or pwd for patt and copen
+        \*                      search all files in pwd for <cword> and copen
+        \/                      same, for @/ or visual block (uses up @v)
+        \z                      fold on @/
+        \h1/2/3                 N: hl <cword>, 1/magenta, 2/green, 3/cyan
+        F1/2/3                  V: same as above, F4 (reverse), /. (reset)
+        \hc/r                   N: hl column/current search pattern
+        |                       hl column
+        <C-Left>,<C-Right>      in qf files, older and newer clist/llist
+
+# plugins
+
+## fzf
+
+    Lb, Lm, Ld              Buffers, History, Files
+    LS, Lg, Ll              GFiles? (git status), Rg, Lines
+
+## fugitive and GV
+
+NOTES:  do/dp can't operate on visual blocks, use :diffput/get command to (un)stage partial hunks
+
+### general navigation:
+
+        gb (select) CR/o    open blame commit/in new window (line -> commit)
+            -               reblame at commit shown in line
+        gs D (select) CR    find origin of a change/line    (commit -> line)
+        :Glog --grep=foo    find commit with message containing foo
+        (file) :Gedit 0     get back to index version
+
+### status:
+
+        X                   undo (staged: co HEAD, unstaged: co, untracked: CLEAN!)
+        ., R, -             prefill command with filename, reload, - stage/unstage
+        cc/a/vc/va/f/s      commit: normal, amend, verbose, both, fixup, squash
+        dd/D, =, i          split diff, toggle inline diff, reveal hunks incrementally
+                            within diff: ^N/^P next/prev hunk, "-" stage/unstage, X discard
+### object browser
+
+        C                   go to containing commit
+        cf/s/A              create fixup/squash/+amend commit for commit under the cursor
+        ri/f/e              rebase: interactive, autosquash, edit list
+                            use ancestor of commit under cursor as upstream if possible)
+        rr/s/a/w/m/d        continue, skip?, abort, reword, edit, drop current commit
+
+### editing a file
+
+        gc/d/e/s/W          diff-HEAD, diff, edit, status, write
+        gl/r                commits involving file, revs of file (as cwindow)
+        gL/gk/gka           commits involving file, ALL commits (GV style), ALL branches
+
+## undotree
+
+    \u                      (then press ? for help)
+
+## vimsneak
+
+    sXY/SXY                 like f/F, but ignorecase
+    s/; S/, N;/N,           (or hotkeys) to move among matches
+    ^O, s<CR>               go back, repeat
+    [N]OzXY                 operator O on cursor to target (Z for backward)
+                            (e.g. 5dzcd deletes till 5th 'cd' from cursor)
+    NsXY (N>=2)             search scoped to 2*N columns (great for man page option search!)
+
+## surround
+
+    csXY/csXtY, cstX        change surround X to Y/tag Y, any tag to X
+    dsX, dst/dsNt           delete X, tag, Nth outer tag
+    ysVMX                   VM is a vim motion or text object (e.g., csw")
+                            cs is shortcut for ysi; special case: yss is current line
+    yS/ySS                  put targeted object in a new line then put delimiters on separate lines
+        targets:            ( ) { } [ ] < > ' " ` t w W s p
+        replacements:       always a single char (if "<" will prompt for more)
+                            ctrl-t: like <, but tags on their own lines
+        cool tricks:        (a+b+c) . cs)( = ( a+b+c )
+
+## NERDCommenter (V: only)
+
+    ##                      comm block left aligned (all else is UN-aligned)
+    #$, #i/#<Space>         uncomm, toggle block linewise/on 1st line
+    #y                      yank then comm block
+
+## Tabular
+
+    ,a/patt/                play with r1c0l1 etc
+
+## DrawIt
+
+    ,di/,ds/<space>         start/stop/toggle erase
+                            also try: h j k l < > ^ v <Home> <End> <PgUp> <PgDn>
+                            (other features (canvas, box, ellipse, fill, ...) exist)
+
+## dragvisual
+
+    <Leader><arrow key>     (drag visual using arrow keys)
+
+## netrw
+
+-   unreliable, even dangerous (e.g., `gp` on a remote SILENTLY acts on a local file of the same name).
+-   Stick to:
+    -   navigation: -/CR/u/U, c (cd); AVOID "i"
+    -   file/dir: qf (ls -al, local only), D/R (del/ren), d/% (new dir/file)
+    -   bookmarks: mb, mB, qb, <N>gb
+    -   preview/edit: p/v/t (v is default in our setup)
+    -   marks: mt, mf/mr, mc (DON'T use mm!)
+-   and MAYBE:
+    -   hiding list: ^H (add), a (toggle), mh (toggle marked file's extension)
+    -   a   toggle ignore/hide/show hiding list
+
+

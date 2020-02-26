@@ -1,0 +1,22 @@
+# my vim setup
+
+Nothing spectacular here, really; I'm writing this more for myself than anyone
+else.
+
+*   the `.vimrc` looks monolithic, and it is, if you consider only those
+    features that I want everywhere I use vim.  But there are a lot of extra
+    settings that I don't really need everywhere, and they are distributed
+    among a dozen or so files in `.vim/plugin`.
+
+*   I don't use any package manager; just vim 8.x's builtin mechanism.  The
+    list of plugins is in a file called `.list` in `.vim/pack/common/start`;
+    if I have to start from scratch on a new machine on which I want
+    everything I just clone them all, then register them in `myr`.
+    Updates are handled by `cd ~/.vim; myr pull`.
+
+    See https://github.com/sitaramc/notes/blob/master/myr.mkd for details, but
+    it's a very simple shell script that lets me run the same command on
+    multiple repos, basically a very minimal clone of Joey Hess's `mr`.
+
+*   my own customised help for stuff I tend to forget is in `help.mkd`;
+    hitting `\hh` opens a pager on that file for quick access.
