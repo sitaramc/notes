@@ -1,0 +1,244 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use 5.10.0;
+use Data::Dumper;
+use URI::Escape;
+use POSIX qw(setsid);
+
+my $UU = "ff";          # unsafe user; change this after reading below
+
+=for documentation
+
+MOTIVATION
+----------
+
+As a Linux user, you generally don't install software from arbitrary sites on
+the web; as long as you stick to your distro's repos, the software you
+download should be quite trustworthy.
+
+But all software has bugs, which can be exploited by sending it specially
+crafted files to operate on -- images, videos, PDFs, "office" documents, and
+of course HTML+JS.
+
+All software that operates on data that came from outside the system is thus a
+risk.  The basic idea behind this program is to isolate this danger, using
+Unix's native userid separation as the protection mechanism.
+
+CAVEATS
+-------
+
+-   This won't protect from a bug that allows privilege escalation to root.
+    These are very, very, rare, especially because none of the programs we're
+    discussing here are likely to be setuid-root, so that leaves only kernel
+    exploits like "Dirty COW".  Best to keep your systems updated!
+
+-   This also won't protect against various kinds of information leaks (such
+    as program A finding out that program B is running, and the file names it
+    is operating on).  See next section.
+
+-   If you're on the utterly moronic Ubuntu platform, apart from re-thinking
+    your life choices, you will also need to `sudo chmod 750 /home/*` and then
+    edit `/etc/adduser.conf` to change the 755 in the `DIR_MODE` line to 750.
+
+THREAT MODEL
+------------
+
+Literally all this tool does is protect the bulk of your data from being
+tampered with or stolen simply because of *one* malicious file you happened to
+download and view using a vulnerable program.
+
+If you think your threat model is much more than that, you should consider
+tools like firejail (note that it is setuid root, and there have been some
+concerns about that), or even go all the way upto installing Qubes.
+
+But for the average person who is not subject to targeted attacks by
+taxpayer-funded cyber criminals (i.e., the intelligence agencies of
+various countries), this should be a good starting point.
+
+Most importantly, it's stupid simple to understand and use.  Read on!
+
+HOW I USE IT
+------------
+
+On my system, the userid "sitaram" contains all the files (of various kinds)
+that are important to me in the long term.  However, this userid never
+operates on binary files -- all such operations are delegated to the "ff"
+userid.  Only thunderbird and mutt, and of course vim and several other *text*
+based tools, run here.
+
+So when I click on a PDF, or a URL, sent to me in an email, or click on a file
+in a file manager, what happens is that the file is copied over to a holding
+area in the "ff" userid, and the program is executed there.
+
+Files in the holding area that are older than 1 hour are deleted.  This means:
+
+>   IMPORTANT NOTE:
+
+>   If I actually want to *edit* one of these files and save the changed
+>   version, or perhaps email it to someone, I need to copy it back from
+>   "ff"'s holding area into "sitaram" before that 1 hour is up!
+
+SETTING IT UP
+-------------
+
+I'll continue to use "sitaram" and "ff" here; substitute your own "protected"
+and "unprotected" usernames.
+
+1.  Needless to say, create an "unprotected user".  You can even call it "ff"
+    if you like :-)
+
+2.  make sure "sitaram" can "scp" files to "ff" without requiring a password
+    (i.e., using ssh keys)
+
+3.  make sure `xhost` is setup to allow "ff" to run graphical programs.  If
+    you have logged in to the desktop as "sitaram", you will need to put this
+    command somewhere in your startup files:
+
+        xhost +SI:localuser:ff
+
+    (I log in *as* "ff" so I don't need this).
+
+4.  install this program (jailer) in /usr/local/bin, making it executable for
+    all users.
+
+5.  ensure that "sitaram"'s PATH contains /home/sitaram/bin **before**
+    any system locations.  To save time, this is the line you need to put in
+    your .bashrc or .zshrc:
+
+        [[ $PATH =~ $HOME/bin ]] || PATH=$HOME/bin:$PATH
+
+6.  create symbolic links pointing each unsafe program name to this binary, in
+    /home/sitaram/bin.  Just to recap, an "unsafe" program is one that might
+    end up handling *binary* data that came in from outside your system.  For
+    example, here's what I have:
+
+        $ ls -al /home/sitaram/bin | grep jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 chromium -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:03 engrampa -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 firefox -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 geeqie -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 gimp -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:03 libreoffice -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 mpv -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 okular -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 qpdfview -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 qutebrowser -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 ristretto -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 transmission-gtk -> /usr/local/bin/jailer
+        lrwxrwxrwx  1 sitaram sitaram    21 Apr  4 07:09 zathura -> /usr/local/bin/jailer
+
+    This will ensure that whenever the protected user tries to run a program
+    (for example when you click a document in Thunderbird), then
+    /usr/local/bin/jailer will run instead.
+
+    WARNING: a lot depends on how complete this step is.  If you forget to add
+    something here, then that "unsafe program" will run directly in the
+    "protected user".
+
+PROBLEMS / TROUBLESHOOTING
+--------------------------
+
+(I use Thunderbird as an example below; it could be any other mail client,
+file manager, etc.)
+
+*   it helps to delete any previous application mappings in Thunderbird (may
+    or may not be needed for other mail clients).
+
+    (To do this, go to preferences, attachments, choose the "incoming" tab,
+    click down arrow on current choice, "delete action")
+
+*   sometimes the desktop file (like /usr/share/applications/firefox.desktop)
+    hardcodes a path to the executable (e.g., "/usr/lib/firefox/firefox").
+    For those, you need to copy that file to ~/.local/share/applications, but
+    change each such full path to just the bare name ("firefox", for example).
+    They will occur only in "Exec=" lines.
+
+    TIP: if you already have firejail installed for some reason, you can run
+    `firecfg --fix` as a normal user to make this happen.)
+
+*   finally, if you're starting thunderbird from the menu, and you have not
+    logged out of your session after any PATH changes were made (step 5 in the
+    "SETTING IT UP" section), you may have to logout and log back in.
+    Otherwise thunderbird may still be seeing the old PATH.
+
+=cut
+
+system("logger", join(" | ", "$ENV{USER} :: JAILER", $0, @ARGV));
+# cheapest logging available!  Delete if you don't need it.
+
+if ($ENV{USER} ne $UU) {
+    # we're running as an alias, and the basename of $0 is the program to run.
+    # For example $0 might be /home/sitaram/bin/libreoffice
+    my $prog = $0;
+    $prog =~ s(.*/)();
+    # $prog is now "libreoffice"
+
+    # the filename is a bit more involved.  Consider the following examples:
+    #   geeqie -r test.png
+    #   libreoffice test.odt
+    #   libreoffice file:///home/sitaram/test.odt
+    #   libreoffice --calc test.xlsx
+    #   libreoffice --calc file:///home/sitaram/test.xlsx
+    #   libreoffice --writer file://URL%20escaped%20filename%20with%20spaces.odt
+
+    # As you can see, the file/URL may not be the first argument, but (so far
+    # as I can see) it is always the *last* one, so we pop instead of shift:
+    my $file = pop;
+    $file =~ s(^file:///)(/);
+
+    # if it doesn't look like a valid file...
+    unless (-f $file) {
+        # ...maybe it's URL escaped
+        my $f = uri_unescape($file);
+        # ...now, is *this* a file?  If so, we use that
+        $file = $f if -f $f;
+        # ...and if not, $file does not change (it's probably a URL)
+    }
+
+    # if it's a file, send it over
+    unless ( -d "/tmp/jail" ) {
+        system("ssh $UU\@localhost mkdir /tmp/jail");
+        system("ssh $UU\@localhost chmod 700 /tmp/jail");
+    }
+    system("scp", $file, "$UU\@localhost:/tmp/jail/") if -f $file;
+
+    # now we have to initiate a command to run $prog on $file, but in ff
+    $file =~ s(.*/)() if -f $file;      # get the basename if it's a file (i.e., heh, don't do this to URLs!)
+    $file = uri_escape($file);          # escape whatever it is so it carries over the 'ssh' command cleanly
+
+    # daemonize.  Maybe this could be improved a bit.  We use a double fork,
+    # with file handles given up between the two of them.
+    fork() and exit;
+    close STDIN;
+    close STDOUT;
+    close STDERR;
+    setsid or die "Can't start a new session: $!";
+    open STDIN,  '<', '/dev/null' or die $!;
+    open STDOUT, '>>', "$ENV{HOME}/.xsession-errors";
+    open STDERR, '>&STDOUT' or die $!;
+    fork() and exit;
+
+    # now the actual command to be sent to ff
+    my @cmd = ("ssh", "$UU\@localhost", "jailer", $prog);
+    push @cmd, @ARGV if @ARGV;                              # like, "--calc"
+    push @cmd, $file;
+    system(@cmd);
+
+} else {
+    # we're running as the unprotected user ("ff")
+
+    # first, clean up files older than 1 hour
+    system("find /tmp/jail -type f -mmin +60 -execdir /bin/rm '{}' ';'");
+
+    chdir("/tmp/jail");
+
+    $ENV{DISPLAY} = ':0';
+    # this may be needed if $UU is not your logged in user
+    # TODO stop hardcoding it!
+
+    $ARGV[-1] = uri_unescape($ARGV[-1]);                # file (last arg) was escaped before coming over, remember?
+    exec(@ARGV);
+
+}
+
