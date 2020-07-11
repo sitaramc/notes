@@ -168,6 +168,18 @@ system("logger", join(" | ", "$ENV{USER} :: JAILER", $0, @ARGV));
 # cheapest logging available!  Delete if you don't need it.
 
 if ($ENV{USER} ne $UU) {
+    # daemonize.  Maybe this could be improved a bit.  We use a double fork,
+    # with file handles given up between the two of them.
+    fork() and exit;
+    close STDIN;
+    close STDOUT;
+    close STDERR;
+    setsid or die "Can't start a new session: $!";
+    open STDIN,  '<', '/dev/null' or die $!;
+    open STDOUT, '>>', "$ENV{HOME}/.xsession-errors";
+    open STDERR, '>&STDOUT' or die $!;
+    fork() and exit;
+
     # we're running as an alias, and the basename of $0 is the program to run.
     # For example $0 might be /home/sitaram/bin/libreoffice
     my $prog = $0;
@@ -184,45 +196,35 @@ if ($ENV{USER} ne $UU) {
 
     # As you can see, the file/URL may not be the first argument, but (so far
     # as I can see) it is always the *last* one, so we pop instead of shift:
-    my $file = pop;
-    $file =~ s(^file:///)(/);
+    my $file = pop || '';
 
-    # if it doesn't look like a valid file...
-    unless (-f $file) {
-        # ...maybe it's URL escaped
-        my $f = uri_unescape($file);
-        # ...now, is *this* a file?  If so, we use that
-        $file = $f if -f $f;
-        # ...and if not, $file does not change (it's probably a URL)
+    if ($file) {
+        $file =~ s(^file:///)(/);
+
+        # if it doesn't look like a valid file...
+        unless (-f $file) {
+            # ...maybe it's URL escaped
+            my $f = uri_unescape($file);
+            # ...now, is *this* a file?  If so, we use that
+            $file = $f if -f $f;
+            # ...and if not, $file does not change (it's probably a URL)
+        }
+
+        # if it's a file, send it over
+        unless ( -d "/tmp/jail" ) {
+            system("ssh $UU\@localhost mkdir /tmp/jail");
+            system("ssh $UU\@localhost chmod 700 /tmp/jail");
+        }
+        system("rsync", "-v", $file, "$UU\@localhost:/tmp/jail/") if -f $file;
+
+        $file =~ s(.*/)() if -f $file;      # get the basename if it's a file (i.e., heh, don't do this to URLs!)
+        $file = uri_escape($file);          # escape whatever it is so it carries over the 'ssh' command cleanly
     }
-
-    # if it's a file, send it over
-    unless ( -d "/tmp/jail" ) {
-        system("ssh $UU\@localhost mkdir /tmp/jail");
-        system("ssh $UU\@localhost chmod 700 /tmp/jail");
-    }
-    system("scp", $file, "$UU\@localhost:/tmp/jail/") if -f $file;
-
-    # now we have to initiate a command to run $prog on $file, but in ff
-    $file =~ s(.*/)() if -f $file;      # get the basename if it's a file (i.e., heh, don't do this to URLs!)
-    $file = uri_escape($file);          # escape whatever it is so it carries over the 'ssh' command cleanly
-
-    # daemonize.  Maybe this could be improved a bit.  We use a double fork,
-    # with file handles given up between the two of them.
-    fork() and exit;
-    close STDIN;
-    close STDOUT;
-    close STDERR;
-    setsid or die "Can't start a new session: $!";
-    open STDIN,  '<', '/dev/null' or die $!;
-    open STDOUT, '>>', "$ENV{HOME}/.xsession-errors";
-    open STDERR, '>&STDOUT' or die $!;
-    fork() and exit;
 
     # now the actual command to be sent to ff
     my @cmd = ("ssh", "$UU\@localhost", "jailer", $prog);
     push @cmd, @ARGV if @ARGV;                              # like, "--calc"
-    push @cmd, $file;
+    push @cmd, $file if $file;
     system(@cmd);
 
 } else {
