@@ -85,9 +85,9 @@ EOF
 
 _find() {
     case $1 in
-        M ) shift; find "$@" -printf "%TF.%TT\t%p\n" | LANG=C sort ;;
-        C ) shift; find "$@" -printf "%CF.%CT\t%p\n" | LANG=C sort ;;
-        S ) shift; find "$@" -printf "%12s\t%p\n"    | LANG=C sort ;;
+        M ) shift; find "$@" -printf "%TF.%TT\t%p\n" | LC_ALL=C sort ;;
+        C ) shift; find "$@" -printf "%CF.%CT\t%p\n" | LC_ALL=C sort ;;
+        S ) shift; find "$@" -printf "%12s\t%p\n"    | LC_ALL=C sort ;;
         *)  find "$@" ;;
     esac
 }

@@ -88,7 +88,7 @@ and "unprotected" usernames.
 1.  Needless to say, create an "unprotected user".  You can even call it "ff"
     if you like :-)
 
-2.  make sure "sitaram" can "scp" files to "ff" without requiring a password
+2.  make sure "sitaram" can "rsync" files to "ff" without requiring a password
     (i.e., using ssh keys)
 
 3.  make sure `xhost` is setup to allow "ff" to run graphical programs.  If
