@@ -1,0 +1,25 @@
+#!/usr/bin/perl -s
+use warnings;
+use strict;
+use 5.10.0;
+
+use Data::Dumper;
+
+our($e, $r);
+
+# called by something like:
+#   lineargs vim "`find ...`"
+# where the output of the find could have filenames with spaces in it
+
+# Options:
+#   -e      remove non-existent files from the list
+#   -r      behave like xargs's "-r" (i.e., "--no-run-if-empty")
+
+my @list;
+@list = split /\n/, (+pop);     # only the last argument will be a newline-separated list
+@list = map { s(^~/)($ENV{HOME}/); $_ } @list;
+@list = grep { -e } @list if $e;
+
+exit 0 if $r and not @list;
+
+exec(@ARGV, @list);
