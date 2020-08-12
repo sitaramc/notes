@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# Similar to using "Rg" from the fzf-vim plugin for vim, but in **paragraph
+# mode**!  A paragraph ends at a blank line (or eof).
+
+# Paragraph mode turns out to be *extremely* useful to search across lines,
+# whether it's code or markdown or whatever.  For example, right here in this
+# code there's a multi-stage pipeline using "fd", "file", "fzf", but if you
+# searched for such usages using the normal fzf-vim plugin you wouldn't find
+# it because the three commands are on separate lines.
+
+# Features:
+# - entries are searched by **paragraph** using fzf (with all its magic!)
+# - query words are highlighted in the preview window of fzf for convenience
+# - opens a quickfix list of the first lines of selected paragraphs when you hit enter
+# - query words are also turned into a vim regex for convenience (":set hls" recommended)
+
+# WARNING: reads ALL the lines in ALL the "text" files in the current
+# directory; best not run it in your $HOME :)
+
+# Note that only the preview shows the paragraph correctly; in the main fzf
+# selection window it looks a bit crowded because a whole *paragraph* is shown
+# as one line there!
+
+# Here's how it works:
+# - find all the "text" files in $PWD (uses the "fd" and "file" commands)
+# - print every single line in each of those files
+#   - converting each empty line to a NUL
+#   - prefixing filename:linenumber (so the filename also becomes queriable)
+#   and feed it to fzf
+# - tell fzf "--read0" so each *paragraph* becomes a unit to "query"
+# - from fzf's output, pull out the *first* lines of each paragraph and put
+#   them into a vim "errorfile" (quickfix list)
+# - send that to vim using the "-q" option
+
+# Voilà!
+
+# ----------------------------------------------------------------------
+
+set -o pipefail
+# we need this to know whether the user hit Crl-G
+
+# no arguments?
+[[ -z $1 ]] && { echo >&2 "at least one argument please!"; exit 1; }
+
+# ----------------------------------------------------------------------
+
+# For the life of me I could not figure out how to roll this functionality
+# directly into the `--preview=` option!  Oh well, this works fine too.
+[[ $1 == --preview ]] && {
+    shift
+    q="$*"
+    q=${q// /\\|}
+    grep --color=always -i -e '$' -e $q
+    exit 0
+}
+
+# ----------------------------------------------------------------------
+
+x=$(fd -t f |
+    file -0 -p -f - |
+    perl -ne 'next unless /\0: .*text/; s/\0.*//; print' |
+    perl -ne 'BEGIN{@ARGV=<>; chomp @ARGV;} $_ =~ s/\n/\0/ if $_ eq "\n" or eof; print "$ARGV:$.:$_"; close ARGV if eof' |
+    fzf -q "$*" \
+        --tac \
+        --read0 \
+        --print-query \
+        --color=hl:12,hl+:12 \
+        --bind alt-a:select-all \
+        --preview-window=wrap:top:75% \
+        --preview="echo {} | $0 --preview {q}" |
+    perl -F: -nae 'print if $F[1] != $old+1; $old=$F[1]'
+)
+
+# ----------------------------------------------------------------------
+
+# user hit Ctrl-G
+[[ $? = 130 ]] && exit 0
+
+# make a vim search pattern out of the first line of $x (which is the "query",
+# due to using "--print-query" in the fzf command)
+q=$(echo "$x" | head -1 | tr ' ' '|')
+
+# start vim with the quickfix list set to "$x".  \v is "very magic"; allows
+# '|' to act as alternation in regex
+vim -q <(echo "$x"|tail +2) -c copen -c "let @/='\v$q'"

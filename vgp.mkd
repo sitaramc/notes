@@ -1,0 +1,36 @@
+# vgp -- search all text files in paragraphs mode
+
+NOTE: for `fzf-vim` users only; if you've never used the `:Rg` command this
+won't make any sense to you.
+
+----
+
+Code and documentation does not always sit in one line.  For example, let's
+say you remember you had some nifty bit of code that piped from `fd`, through
+`file` and `perl`, to `fzf`.  And you simply cannot remember where it was.
+
+You fire up `vim`, and start `:Rg`, then type in `fzf fd perl file`.  You're
+hoping you'll find it, but your code was not this:
+
+    fd blahblah | file blahblah | perl blahblah | fzf blahblah
+
+but this (the blahblah's were too long!):
+
+    fd -f t |
+        file -0 -p -f - |
+        perl -ne 'some perl code here' |
+        fzf -q "$*" --some --fzf --options --here
+
+You know very well that `:Rg` won't find it; they're all on different lines.
+
+That's why you have `vgp`.  Well... kind of.  There's a fair bit of
+scaffolding, and I needed it more at the command line than within vim, so it's
+actually shell script.  (I'm sure someone could wrap it inside some vimscript;
+only the last part -- which invokes `vim` -- would need to change).
+
+So, `vgp fd file fzf perl` will find the code you're looking for.  Or you can
+start with `vgp fd` and then interactively add on the other words.
+
+I'm very taken with this bit of code chicanery to make my favourite tool `fzf`
+do things I have not seen on its wiki, so if you don't like it, don't tell me
+:-)
