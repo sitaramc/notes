@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# TODO: make this an option, maybe "-hl" for hardlink, to run AFTER the second sanity check
+#   cut -f3 $TMPF.dups | perl -lne 'if ($_ and $old) { unlink $_; link $old, $_; }; $old = $_'
+
+# ----------------------------------------------------------------------
+
+export TMPF=$HOME/tmp/dups.tmp
+
+# ----------------------------------------------------------------------
+
+# IMPORTANT NOTE: don't do stupid things like specifying the same directory
+# name twice, or specifying "." and also some sub-directory.  We're not
+# checking for duplicates that are actually the same actual file, so you may
+# lose data!
+
+# ----------------------------------------------------------------------
+
+# option: "keep" files in the first directory among the arguments passed
+# (XXX: will we ever need more than one?)
+keep=
+[[ $1 == -k ]] && {
+    shift
+    keep="$1"
+}
+
+# ----------------------------------------------------------------------
+
+find "$@" -type f -printf "%12s\t%T+\t%p\n" | sort -s -k1,1nr -k2,2r | uniq -w12 -D | sed -e 's/^ *//' > $TMPF.sizes
+
+cut -f3- < $TMPF.sizes > $TMPF.names
+
+md5deep -j0 -f $TMPF.names | sed -e 's/  /\t/' > $TMPF.md5s
+
+# sanity check: both md5s and sizes must have the same exact set of files in the same order
+diff <(cut -f2 $TMPF.md5s) <(cut -f3 $TMPF.sizes) || { echo >&2 something went wrong; exit 1; }
+
+paste <(cut -f1 $TMPF.md5s) $TMPF.sizes | perl -pe 's/\t(\d+)\t/sprintf("\t%12d\t",$1)/e' | sort -s -k2,2nr -k1,1 | uniq -w45 --all-repeated=separate > $TMPF.dups
+
+# sanity check; all hashes in each "block" must be the same
+cut -f1 $TMPF.dups | perl -lne 'die "error in line $. of dups file" if $_ and $old and $_ ne $old; $old = $_' || { echo >&2 something went wrong; exit 1; }
+
+if [[ -n $keep ]]
+then
+    perl -lpe "\$_ .= \"\tkeep\" if m(\t\Q$keep/)" -i $TMPF.dups
+else
+    perl -00 -pe 's/\n/\tkeep\n/' -i $TMPF.dups
+fi
+
+# ----------------------------------------------------------------------
+
+vim $TMPF.dups +/.*keep$ || exit $?
+
+# ----------------------------------------------------------------------
+
+echo -n `grep -v keep$ $TMPF.dups | grep . | wc -l` "files will be removed; are you sure (type uppercase YES)? "
+read ans
+[[ $ans == YES ]] || { echo aborting without any files removed; exit 0; }
+
+grep -v keep$ $TMPF.dups | grep . | cut -f4 | xargs -r --delimiter=$'\n' rm -v

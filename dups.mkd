@@ -1,0 +1,25 @@
+# `dups` yet another duplicate file finder
+
+It's a testament to how hard this is, that even after trying pretty much everything out there, and even writing a few on my own a couple of times, I did not find something I could use for the long term.
+
+My needs are simple:
+
+-   Don't give me too many options, just show me the duplicates.
+-   Show me the largest files at the top; this is not a show-stopper but often useful.
+-   Allow me to pre-select one directory to "keep" (files from this directory won't be deleted) if I want to.  (If I don't pick one, select the newest file in each set of duplicates to "keep" as a convenience).
+-   Use my editor as my interface for choosing what to delete/keep.  Nothing else is as flexible or interactive without over-engineering the tool itself.
+
+I finally made one last attempt at writing one, and so far it's been working out fine.
+
+IMPORTANT NOTE: don't do things like specifying the same directory name twice, or specifying "." and also some sub-directory.  We're not checking for duplicates that are really the same actual file, so you may lose data!  Let me know if this is needed and I'll add it in somehow.
+
+## Example runs
+
+When you run `dups`, you will be dropped into vim.  (Again, if someone wants that changed, let me know).  Just remember: files are deleted if they appear in the saved file, and the line does not end with "keep".
+
+Example usages:
+
+*   `dups` -- just finds duplicates in the current directory and below.  The newest file in each set of duplicates will be marked "keep".
+*   `dups d1 d2 d3` -- same, except only look in the named directories
+*   `dups -k d1 d2 d3` -- same, except files in `d1` are marked `keep`, regardless of age.
+
