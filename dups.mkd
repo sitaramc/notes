@@ -1,25 +1,59 @@
 # `dups` yet another duplicate file finder
 
-It's a testament to how hard this is, that even after trying pretty much everything out there, and even writing a few on my own a couple of times, I did not find something I could use for the long term.
+Even after trying pretty much everything out there, and even writing a few on my own a couple of times, I did not find something I could use for the long term.
 
-My needs are simple:
+My needs are simple.  Primarily:
 
 -   Don't give me too many options, just show me the duplicates.
--   Show me the largest files at the top; this is not a show-stopper but often useful.
--   Allow me to pre-select one directory to "keep" (files from this directory won't be deleted) if I want to.  (If I don't pick one, select the newest file in each set of duplicates to "keep" as a convenience).
--   Use my editor as my interface for choosing what to delete/keep.  Nothing else is as flexible or interactive without over-engineering the tool itself.
+-   Show me the largest files at the top, because most of the time I'm trying to quickly make space!
+-   Within each set of duplicates, keep the order I gave on the command line (if I gave any arguments)
 
-I finally made one last attempt at writing one, and so far it's been working out fine.
+Nice to have:
 
-IMPORTANT NOTE: don't do things like specifying the same directory name twice, or specifying "." and also some sub-directory.  We're not checking for duplicates that are really the same actual file, so you may lose data!  Let me know if this is needed and I'll add it in somehow.
+-   Use `vidir` as my interface for choosing what to delete/keep.  Nothing else is as flexible or interactive without over-engineering the tool itself, not to mention requiring me to learn that UI.
+-   Allow me to send in a list of files I'm specifically interested in, and process only those (again, much better than loading the program with more options to select files on various criteria).
+-   If there are hard links, pick one of the files and ignore the rest.  In the most common use case I have, it is about reclaiming disk space, so hard links are not relevant.  However, give me a separate option to *only* look at hard links, in case I ever feel that need.
+
+## A note on vidir
+
+`vidir` is from the `moreutils` package, available in pretty much every distro out there.  Vidir puts a list of files and directories into a temporary file and pops up an editor; you make changes to that file and save it and the changes happen.
+
+Vidir can also *rename and move* files.  Say, while detecting duplicates, you find you want a certain file renamed, or even placed in some other location, just type over it **without** changing the number and the tab character to the left of the file name!  Done!
+
+It's an awesome tool, but it's also a sharp knife.  For example, if you delete all the lines in the file and save it, *it will delete all the files it knew about when it started up!*
+
+**If you want to abort**:
+
+-   if you're using `vim`, just exit with `:cq`.
+-   if not, then either find out how your editor does an `exit with error`, or go to some other terminal and kill `vidir`.
 
 ## Example runs
 
-When you run `dups`, you will be dropped into vim.  (Again, if someone wants that changed, let me know).  Just remember: files are deleted if they appear in the saved file, and the line does not end with "keep".
+When you run `dups`, you will be dropped into vim (via `vidir`).  (Or whatever your `$EDITOR` is I suppose).  Make changes and save.  **Just remember: a file is deleted if the line with its name is deleted in the saved file.**
 
 Example usages:
 
-*   `dups` -- just finds duplicates in the current directory and below.  The newest file in each set of duplicates will be marked "keep".
+*   `dups` -- just finds duplicates in the current directory and below
 *   `dups d1 d2 d3` -- same, except only look in the named directories
-*   `dups -k d1 d2 d3` -- same, except files in `d1` are marked `keep`, regardless of age.
+*   `dups -H` -- special mode where only hardlinked files are shown
+*   `find d1 d2 -size +10M | dups` -- operate only on files supplied
+    *   or, maybe, `find d1 d2 | grep -i tiff | dups` -- you get the idea!
+
+## Technical notes
+
+**Ways to lose files accidentally**: `rmlint` [documentation](https://rmlint.readthedocs.io/en/latest/cautions.html#attributes-of-a-robust-duplicate-finder) shows several ways in which files can be lost if the de-dup program is not careful.  I think I've covered all of them.  If you find any glitches, please let me know.
+
+**Hard links**: a lot of documentation, caveats, and examples in other tools go into handling these safely (as in, don't lose all copies by mistake!).  `dups` will ignore all but one of a set of hard linked files.  The main use case is reclaiming disk space, so hard links don't matter.
+
+That said, if you run it with `-H` as the first argument, it will *only* look at hard links, and you can delete whatever you need to.
+
+The point is that these two modes are disjoint; you can't combine them.  Much safer, I think :)
+
+**Symlinks**: are ignored.  If you send in a symlink as an argument, we resolve it before using it.
+
+**Empty files**: are ignored.  If you really need to process them, use something like this:
+
+    find . -type f -empty | dups
+
+**Efficiency**: The only optimisation is to quickly eliminate false positives in large (i.e. above a certain threshold, currentlt 4 MB) by hashing only 1 MB from the middle.  Other optimisations (such as using the device+inode order to process files -- useful on rotational hard disks) are possible but not yet implemented.  To be honest this is plenty fast enough for me and I may never get around to implementing them.
 

@@ -1,60 +1,278 @@
-#!/bin/bash
+#!/usr/bin/perl -s
+use warnings;
+use strict;
+use 5.10.0;
+use Data::Dumper;
+use Digest::SHA qw(sha256_hex);
 
-# TODO: make this an option, maybe "-hl" for hardlink, to run AFTER the second sanity check
-#   cut -f3 $TMPF.dups | perl -lne 'if ($_ and $old) { unlink $_; link $old, $_; }; $old = $_'
+sub usage {
+    print STDERR "
+dups -- find duplicate files
+
+Usage:
+    dups [-H] [dirlist]
+    find ... | dups
+
+Find duplicate files.
+
+NOTES AND CAVEATS:
+
+1.  Uses 'vidir' for the user interface.  If you're not familiar with 'vidir',
+    install 'moreutils' (available on every distro) and play with it.
+    https://github.com/sitaramc/notes/blob/master/dups.mkd) has more details.
+
+2.  This is mainly about reclaiming disk space, so hard links are ignored;
+    i.e., only one file in a set of files that have the same device+inode are
+    processed.
+
+    However there is one option (-H) that looks *only* for hard links, so you
+    *can* examine and delete those also if you wish.
+
+3.  Doesn't look at symlinks.  Symlinks sent as arguments are resolved to
+    normal directories before processing.
+
+4.  Empty files are ignored; if you must process them, use the second form of
+    the usage above (e.g., 'find . -empty | dups').
+
+";
+    exit 1;
+}
+
+our($h, $H);
+
+usage if $h;
 
 # ----------------------------------------------------------------------
 
-export TMPF=$HOME/tmp/dups.tmp
+# One incarnation of my duplicate finder used to check the beginnings of two
+# same-sized files to save time.  I think checking the middle is more likely
+# to filter out false matches, so that's what I'm doing here.
+#
+# If the size of a file is greater than $THRESHOLD, then in the first round of
+# hashing, compute the hash for $SNIP_SIZE bytes from the middle of the file
+my $THRESHOLD = 1024*1024*4;
+my $SNIP_SIZE = 1024*1024;
 
 # ----------------------------------------------------------------------
 
-# IMPORTANT NOTE: don't do stupid things like specifying the same directory
-# name twice, or specifying "." and also some sub-directory.  We're not
-# checking for duplicates that are actually the same actual file, so you may
-# lose data!
+# Find hard links.  This mode is separate, and stands alone, because most of
+# the time I don't need to delete them, but sometimes I might wish to only
+# weed out hard links.
 
-# ----------------------------------------------------------------------
+if ($H) {
+    shift;
+    cleanup_ARGV();
 
-# option: "keep" files in the first directory among the arguments passed
-# (XXX: will we ever need more than one?)
-keep=
-[[ $1 == -k ]] && {
-    shift
-    keep="$1"
+    # Get input from `find` for files that have more than one hard link,
+    # sorted by size descending.
+    open(FIND, "-|", "find " . join(" ", @ARGV) . " -type f -links +1 -printf '%12s %10D/%12i\t%p\\n' | sort -s -k1,1nr");
+
+    # Our output, as we said earlier, goes to `vidir`
+    open(STDOUT, "|-", "vidir -");
+    print_vidir_preamble();
+
+    my $seen = 0;
+    my %names_seen;
+    while (<FIND>) {
+        chomp;
+        my ($size_dev_inode, $name) = split /\t/, $_, 2;
+        if ($size_dev_inode ne $seen) {
+            say "" if $seen;
+            $seen = $size_dev_inode;
+            say "# $seen";
+        }
+        say $name unless $names_seen{$name}++;
+    }
+    close(STDOUT);
+
+    exit;
 }
 
 # ----------------------------------------------------------------------
 
-find "$@" -type f -printf "%12s\t%T+\t%p\n" | sort -s -k1,1nr -k2,2r | uniq -w12 -D | sed -e 's/^ *//' > $TMPF.sizes
+my @list;
+if ( -t 0 ) {
+    cleanup_ARGV();
 
-cut -f3- < $TMPF.sizes > $TMPF.names
+    # Get input from `find`; files only, with device, inode, size, and path as fields
+    open(FIND, "-|", "find", @ARGV, "-type", "f", "!", "-empty", "-printf", "%D %i %s %p\\n") or die "$!";
+    @list = <FIND>;
+} else {
+    # Alternatively, if STDIN is a pipe, take STDIN as a list of files to be
+    # de-duplicated and produce the same 4 fields for them.  "perldoc -f stat"
+    # is where we get the 0, 1, and 7 for device, inode, and size.  Oh and we
+    # discard anything that is not a file from the STDIN
+    @list = map { my @a = stat($_); join " ", @a[0,1,7], $_ } grep { -f } map { chomp; $_; } <>;
+}
 
-md5deep -j0 -f $TMPF.names | sed -e 's/  /\t/' > $TMPF.md5s
+# set up the hashes we will need
+my %by_inode;           # well, we mean device+inode of course
+my %by_size_or_hash;    # and this becomes size+hash after the first round of elimination
 
-# sanity check: both md5s and sizes must have the same exact set of files in the same order
-diff <(cut -f2 $TMPF.md5s) <(cut -f3 $TMPF.sizes) || { echo >&2 something went wrong; exit 1; }
+for (@list) {
+    chomp;
+    my ($dev, $inode, $size, $name) = split ' ', $_, 4;
 
-paste <(cut -f1 $TMPF.md5s) $TMPF.sizes | perl -pe 's/\t(\d+)\t/sprintf("\t%12d\t",$1)/e' | sort -s -k2,2nr -k1,1 | uniq -w45 --all-repeated=separate > $TMPF.dups
+    # skip empty files (see caveats section above)
+    # next unless $size;
 
-# sanity check; all hashes in each "block" must be the same
-cut -f1 $TMPF.dups | perl -lne 'die "error in line $. of dups file" if $_ and $old and $_ ne $old; $old = $_' || { echo >&2 something went wrong; exit 1; }
+    # skip if dev+inode combo was already seen; again, see caveats section
+    # above.  If you need to de-dup hard links, use "-h"
+    next if exists $by_inode{"$dev/$inode"};
+    $by_inode{"$dev/$inode"} = 1;
 
-if [[ -n $keep ]]
-then
-    perl -lpe "\$_ .= \"\tkeep\" if m(\t\Q$keep/)" -i $TMPF.dups
-else
-    perl -00 -pe 's/\n/\tkeep\n/' -i $TMPF.dups
-fi
+    # add the file to a list for the given size
+    push @{ $by_size_or_hash{$size} }, $name;
+    # here's what that hash looks like on a set of 4 files, of which 3 are of
+    # the same size, and a 4th is different.  The *keys* of the hash are "size",
+    # and the corresponding *value* is a **list** of files of that size:
+    #     {
+    #       '41' => [
+    #                 './a/file1',
+    #                 './a/file2',
+    #                 './b/file3'
+    #               ],
+    #       '82' => [
+    #                 './b/file4'
+    #               ]
+    #     };
+}
+
+# eliminate singletons; in the above example, the key "82" would disappear
+# since the list it points to has only one entry.
+dups_only();
+
+# compute SHA256, round 1.  However, for files larger than the threshold, this
+# won't be a hash of the full file, but only of a chunk in the middle.
+#
+# Also, the keys of the hash are currently the size, but after this step they
+# will be "hash<space>size".
+
+my @keys = keys %by_size_or_hash;
+for my $s (@keys) {
+    my @names = @{ $by_size_or_hash{$s} };
+    delete $by_size_or_hash{$s};
+
+    for my $n ( @names ) {
+        my $h = hash(1, $s, $n);
+        push @{ $by_size_or_hash{"$h $s"} }, $n;
+    }
+}
+
+# eliminate singletons again
+dups_only();
+
+# compute SHA256, round 2.  For most files, nothing will change, but for files
+# larger than $THRESHOLD, the previous step only computed a partial hash.  Now
+# we get the full hash for those files.
+@keys = keys %by_size_or_hash;
+for my $sh (@keys) {
+    my @names = @{ $by_size_or_hash{$sh} };
+    delete $by_size_or_hash{$sh};
+
+    for my $n ( @names ) {
+        my $h2 = hash(2, $sh, $n);
+        push @{ $by_size_or_hash{"$h2"} }, $n;
+    }
+}
+
+dups_only();
+
+open(STDOUT, "|-", "vidir -");
+print_vidir_preamble();
+dumpdups();
+close(STDOUT);
 
 # ----------------------------------------------------------------------
 
-vim $TMPF.dups +/.*keep$ || exit $?
+sub cleanup_ARGV {
+    # remove all symlinks in argument list.  But before that, remove trailing
+    # slashes; they seem to make a symlink not look like a symlink
+    @ARGV = map { -l ? readlink : $_ } map { s(/$)(); $_ } @ARGV;
 
-# ----------------------------------------------------------------------
+}
 
-echo -n `grep -v keep$ $TMPF.dups | grep . | wc -l` "files will be removed; are you sure (type uppercase YES)? "
-read ans
-[[ $ans == YES ]] || { echo aborting without any files removed; exit 0; }
+# eliminate singletons by size
+sub dups_only {
+    for my $s (keys %by_size_or_hash) {
+        delete $by_size_or_hash{$s} if @{ $by_size_or_hash{$s} } == 1;
+    }
+}
 
-grep -v keep$ $TMPF.dups | grep . | cut -f4 | xargs -r --delimiter=$'\n' rm -v
+sub hash {
+    my ($round, $size, $file) = @_;
+
+    if ($round == 1) {
+        if ($size > $THRESHOLD) {
+            my $snippet;
+            open(my $fh, "<", $file) or die $!;
+            # seek to the middle of the file then read $SNIP_SIZE bytes
+            seek $fh, int ( $size / 2 ), 0;
+            read $fh, $snippet, $SNIP_SIZE;
+            return sha256_hex($snippet);
+        }
+        # else do the full file
+        return hashfile($file)
+    }
+
+    # now round == 2, remember what we get as "size" is actually "hash<space>size"
+    my $hash;
+    ($hash, $size) = split ' ', $size;
+    # recompute the hash if the file is bigger than the threshold
+    $hash = hashfile($file) if $size > $THRESHOLD;
+
+    return "$hash $size";
+}
+
+sub hashfile {
+    my $file = shift;
+    return "UNREADABLE" unless -r $file;
+
+    my $sha = Digest::SHA->new(256);
+    $sha->addfile($file);
+    return $sha->hexdigest;
+}
+
+sub dumpdups {
+
+    # this somewhat convoluted thing is called a Schwartzian Transform (and
+    # has its own wikipedia entry!).  But what it's doing is quite simple:
+    # given that the keys are "hash<space>size", it sorts them by size
+    # descending, so that the user sees the largest space hogs at the top when
+    # `vidir` opens
+    my @keys =
+        map { $_ -> [0] }
+            sort { $b->[1] <=> $a->[1] }
+                map { [ $_, _trim($_) ] }
+                    keys %by_size_or_hash;
+
+    # now list out the files within each set of duplicates.  The comment line
+    # shows the sha256 hash and the size of each set.  They can safely be
+    # ignored -- vidir does not do anything with them.
+    for my $k (@keys) {
+        say "# sha256 $k bytes";
+        for my $n (@{ $by_size_or_hash{$k} }) {
+            say $n;
+        }
+        say "";
+    }
+}
+
+sub _trim {
+    my $x = shift;
+    $x =~ s/.* //;
+    return $x;
+}
+
+sub print_vidir_preamble {
+    say  "# Here's how this works:";
+    say  "#   - delete lines for files you want to delete";
+    say  "#   - keep lines for files you want to keep";
+    say  "#   - then save the file";
+    say  "# If you want to ABORT without any changes:";
+    say  "#   - if you're using vim, exit with ':cq'";
+    say  "#   - if not, find out how to \"exit with error\" in your editor";
+    say  "#     (or go to another terminal and kill vidir!)";
+    say  "# If you need more info, run 'man vidir'";
+    say  "";
+}
