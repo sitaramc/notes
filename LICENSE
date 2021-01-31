@@ -1,0 +1,11 @@
+This is a bunch of small tools that I didn't feel needed their own repos, so a
+collective license will have to do.
+
+All code, including example commands in documentation, should be considered
+GPL v2 or GPL v3 or later -- whichever suits your needs better.
+
+All documentation and examples here should be considered CC-BY-NC-SA 3.0 or
+later.
+
+If you need this to be stated more explicitly *within* any particular script,
+I'd be happy to do that; let me know.
