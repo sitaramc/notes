@@ -114,10 +114,10 @@ for (@list) {
     my ($dev, $inode, $size, $name) = split ' ', $_, 4;
 
     # skip empty files (see caveats section above)
-    # next unless $size;
+    next unless $size;
 
     # skip if dev+inode combo was already seen; again, see caveats section
-    # above.  If you need to de-dup hard links, use "-h"
+    # above.  If you need to de-dup hard links, use "-H"
     next if exists $by_inode{"$dev/$inode"};
     $by_inode{"$dev/$inode"} = 1;
 
