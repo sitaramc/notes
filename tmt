@@ -1,0 +1,150 @@
+#!/bin/bash
+shopt -s inherit_errexit
+set -euo pipefail
+IFS=$'\n\t'
+# set -x
+# export PS4=':.$LINENO:'
+
+# ----------------------------------------------------------------------
+
+stop_task() {
+    HM=`date +%H:%M`; perl -i -pe "s/\t_____\t/\t$HM\t/" $FILE
+}
+
+add_task() {
+    printf "%s\t%s\t%s\t%s\t%s\n" "`date -I`" "`date +%H:%M`" "_____" "$tag" "$desc" >> $FILE
+}
+
+get_details() {
+    read -p "TAG: " tag
+    read -p "DESC: " desc
+}
+
+f1_help() {
+    cat <<EOF | less -c
+Help for "track my time"
+
+You can access this help at any time by hitting F1.
+
+"Currently running task": a task is "running" if the second HH:MM field is
+just "_____".  At most one task can be running at any time.  If no task is
+running, it means you're "off the clock" (e.g., at end of day).
+
+Create a new task:
+-   use F7 to create a new task (I suggest using a simple word tag, 6
+    characters or less for convenience)
+-   if a task was already running, it is automatically stopped when you do this
+
+Stop a task:
+-   if the fzf cursor is on the currently running task, hitting enter will
+    stop it.  Now you're off the clock!
+
+Stop current task *and* restart an older task:
+-   if you take the fzf cursor to an older line and hit enter, the currently
+    running task will stop, and the older task will be resumed.
+
+Get tag-wise totals and grand totals:
+-   the top window automatically shows you tag-wise totals and grand total for
+    the date the currently selected line pertains to
+-   if you type in an fzf query string, the totals will be further reduced to
+    those matching the query
+-   NOTE: the totals will always be for *one* date.  If you want totals for a
+    different date, navigate over to a line containing that date.
+
+Change text, fix timestamps, add notes and comments:
+-   F4 drops you into your \$EDITOR so you can change anything you like
+-   WARNING: don't remove the hard tabs separating the fields :)
+-   WARNING: there is NO ERROR CHECKING on dates and times!
+-   TIP: you can add any other lines you like; tmt will ignore all lines not
+    starting with a year and a month (e.g., 2020-01).  Add comments, meeting
+    notes, blank lines, whatever you like!
+
+Quit: hit F10
+
+Caveat:
+
+-   doesn't support tasks crossing midnight; if you *really* need it let me know
+
+EOF
+}
+
+report() {
+    # this takes multiple lines of stdin and produces tag-wise totals, and a grand total
+    perl -lanE '
+        next if /_____/;
+        $count++;
+        ($sh, $sm, $eh, $em) = split /:/, "$F[1]:$F[2]";
+        $diff = $eh*60+$em - $sh*60-$sm;
+        $sum+=$diff;
+        $sum{$F[3]}+=$diff;
+        sub hhmm { $mm=shift; return sprintf "%02d:%02d", int($mm/60), $mm%60; }
+        END {
+            say "$_\t" . hhmm($sum{$_}) for sort keys %sum;
+            printf "\ntotal:\t%s", hhmm($sum) . " from $count entries on $ENV{RD}\n";
+            printf "current time: " . qx(date +%H:%M);
+        }' |
+    less -c
+}
+
+f7_new() {
+    stop_task
+    cat <&3 > /dev/null     # flush rest of output from fzf
+    get_details
+    add_task
+}
+
+enter_stop_start() {
+    # read line.  If line is a running task (i.e., contains "_____"), just stop it.
+    # otherwise it's a different line (task), so stop the *running* task, then restart the selected task
+    # (i.e., take fields 5 and 6 into tag and desc and start it)
+    IFS= read -r -u3 l
+    stop_task
+    if [[ $l =~ _____ ]]
+    then
+        :
+    else
+        tag=$(echo "$l" | cut -f4)
+        desc=$(echo "$l" | cut -f5)
+        add_task
+    fi
+}
+
+# ----------------------------------------------------------------------
+
+FILE=time.tsv
+[[ -f $FILE ]] || {
+    echo "DATE      	START	END  	TAG   	DESC" > $FILE
+    f1_help
+}
+
+unset FZF_DEFAULT_OPTS
+
+# ----------------------------------------------------------------------
+
+export -f report
+# this function is called within 'preview' so we need it exported
+
+while :
+do
+    {
+        IFS= read -r -u3 key
+        case $key in
+            f1 )
+                f1_help ;;
+            f4 )
+                ${EDITOR:-vim} $FILE ;;
+            f10 )
+                break ;;
+            f7 )
+                f7_new ;;
+            *  )
+                # "ENTER"
+                enter_stop_start ;;
+        esac
+    } 3< <( grep -E -e ^DATE -e '^[0-9]{4}-[0-9]{2}' $FILE | fzf -d$'\t' -m -e +s --tac --info=inline \
+        --header-lines=1 \
+        --header="ENTER:stop/start, F1:help, F4:edit file, F7:new task, F10:quit" \
+        --bind ctrl-a:select-all --expect=f1,f4,f7,f10 \
+        --preview="grep ^{1} $FILE | fzf -f {q} -e +s | env RD={1} bash -c report" \
+        --preview-window=top:50% )
+done

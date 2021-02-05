@@ -1,0 +1,17 @@
+# tmt -- track my time
+
+There are lots of tools to track your time.  As with everything else, there's a Goldilocks thing going on -- they either have too many features, or too little :)
+
+My needs:
+
+-   quickly start and stop tasks
+-   see a summary of hours spent today (or any other day)
+-   everything else can be done using an editor !
+
+I hate making UIs (in fact I've never made one).  But I love `fzf`, so why not?
+
+Take a look at <https://asciinema.org/a/389369> -- it's about 5 minutes.
+
+Or download [tmt.cast](tmt.cast) from here and play it at double speed:
+
+    asciinema play -s 2 tmt.cast
