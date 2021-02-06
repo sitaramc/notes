@@ -10,8 +10,43 @@ My needs:
 
 I hate making UIs (in fact I've never made one).  But I love `fzf`, so why not?
 
-Take a look at <https://asciinema.org/a/389369> -- it's about 5 minutes.
+If you're not familiar with fzf, you may prefer to watch the asciinema at <https://asciinema.org/a/389496> (or download it from [here](tmt.cast) and play it at double speed (`asciinema play -s 2 tmt.cast`).  [NOTE: for some reason when I play it locally, it hangs when it enters the part where it opens up an editor.  Please hit the space bar when that happens.  The online version does not have this problem].
 
-Or download [tmt.cast](tmt.cast) from here and play it at double speed:
+If you **are** familiar with `fzf`, the following textual description may suffice for you to get going.  This is the same information that is available if you hit `F1` in the program.
 
-    asciinema play -s 2 tmt.cast
+----
+
+-   **Currently running task**: a task is "running" if the second HH:MM field
+    is just `"_____"`.  At most one task can be running at any time.  If no
+    task is running, it means you're "off the clock" (e.g., at end of day).
+
+-   **F7** creates a new task and marks it as "running".  Any task previously
+    marked as running is given an end time to mark it as stopped.
+
+-   **ENTER** on a stopped task resumes it.  As with F7, any previously running
+    task is marked stopped.
+
+-   **ENTER** on a running task stops it.  Now you're off the clock (nothing
+    is running).
+
+-   The **preview window** shows tag-wise totals and grand totals for the date
+    on the current line.  If you type in an fzf query string, the totals will
+    be further reduced to those matching the query
+
+-   If you want totals *across* dates, use fzf's filtering, multi-selection
+    (TAB key), or select all (ctrl-a), and then hit **F3**.  This gets you
+    totals for an arbitrary set of lines you choose.
+
+-   **F4** to change text, fix timestamps, add notes and comments, etc., in
+    your \$EDITOR.  Tmt only looks at lines starting with YYYY-MM (e.g.,
+    2021-01); everything else is ignored so you can type in whatever you want!
+
+    -   WARNING: there is NO ERROR CHECKING on dates and times!
+
+    -   WARNING: don't remove the hard tabs separating the fields on the lines
+        that tmt *does* care about :)
+
+Caveat:
+
+-   doesn't support tasks crossing midnight; if you *really* need it let me know
+

@@ -1,0 +1,131 @@
+#!/bin/bash
+
+echo "go to the target terminal NOW!"
+sleep 3
+
+key() { xdotool key $1; sleep 1; }
+show() {  xdotool type "$1"; sleep ${2:-2}; key ctrl+u; }
+enter() { xdotool type "$1"; sleep ${2:-2}; key Return; }
+
+enter 'rm tmt.cast; asciinema rec -t "Track My Time, v2" tmt.cast' 1
+enter 'faketime -f "+0 x20" bash -l' 1
+enter ':' 0
+enter ':' 0
+enter ': This little tool helps me track my time' 2
+enter ': It does a lot, in less than a 100 lines of bash+perl, thanks to fzf!' 3
+enter ':' 0
+enter ':' 0
+enter tmt 1
+
+show 'F7 creates a new task' 2
+key F7
+enter sysad 1
+enter 'configure ... for ...' 1
+sleep 2
+
+show 'F7 creates another task and switches to it (previous task is marked stopped)' 4
+key F7
+enter doc 1
+enter 'document ... for ...' 1
+sleep 2
+
+show 'F7 a third time!' 2
+key F7
+enter test 1
+enter 'test ... for ...' 1
+sleep 2
+
+show 'ENTER on an older task (a) stops current task and (b) resumes older task' 4
+show 'to resume the "doc" task, just cursor up to it and hit ENTER'
+key Up; sleep 1
+key Return; sleep 2
+
+show 'F4 to edit the file'
+key F4
+sleep 2
+key G
+key o
+enter '    you can add notes, comments etc'
+enter 'tmt ignores lines not starting with YYYY-MM'
+enter 'you can edit those lines also but be careful not to delete the HARD TABs'
+sleep 4
+xdotool key Escape; sleep 1; xdotool type gg; sleep 1   # prevents unsightly `" error
+key F10
+sleep 2
+
+key F10
+enter 'cat time.tsv'
+sleep 2
+enter ': notice the notes lines you added are there' 3
+enter ': yet tmt looks just the same' 2
+enter tmt 1
+sleep 2
+key F10
+
+enter ':' 0
+enter ': now we will pull in a file I had previously prepared'
+enter 'cp t/time.tsv .'
+enter 'cat time.tsv'
+sleep 4
+
+enter tmt
+show 'notice the totals in the top window as we move between dates' 4
+key Up
+key Up
+key Up
+key Up
+key Up
+key Down
+key Up
+key Down
+key Up
+key Down
+show 'you can filter the list, and the totals will change' 4
+xdotool type plan; sleep 2
+key Up
+key Up
+key Down
+key Up
+key Down
+key Up
+key Down
+key Up
+xdotool key ctrl+u; sleep 1
+xdotool type git; sleep 2
+key Up
+key Down
+key Up
+key Down
+key Up
+key Down
+xdotool type o; sleep 1
+key BackSpace
+xdotool type o; sleep 1
+key BackSpace
+xdotool type o; sleep 1
+key BackSpace
+xdotool type o; sleep 1
+key BackSpace
+
+xdotool key ctrl+u; sleep 1
+show 'F1 gets you help'
+key F1; sleep 1
+xdotool type q; sleep 1
+
+show 'so far, all the totals you saw were for one day, never across days' 4
+show 'F3 will get you totals for selected records' 3
+show 'use the features of fzf to select records' 2
+show 'e.g., TAB for multi-select, or filter on some text and Ctrl-a to select all' 4
+show 'then hit F3.  This will pipe to "less"' 2
+xdotool type gitolite; sleep 1
+xdotool key ctrl+a; sleep 2
+key F3
+sleep 3
+key F3
+sleep 2
+
+xdotool key ctrl+u; sleep 1
+show "...that's all folks!..."
+key F10
+key ctrl+d
+key ctrl+d

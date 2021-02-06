@@ -1,0 +1,18 @@
+DATE      	START	END  	TAG   	DESC
+2021-02-05	09:02	09:14	sysad	setup gitolite on new server
+2021-02-05	09:22	10:04	sysad	get ssh pubkeys from team to add to gitolite
+2021-02-05	10:30	11:00	teach	gitolite basics class for team
+2021-02-05	11:28	12:42	learn	NIST PUB ... on ... for next week's project
+2021-02-05	14:17	14:41	plan	discuss which repos should be migrated
+2021-02-05	15:12	18:23	sysad	migrate git repos from old server
+    notes: double checked script, dummy runs with small repos, then full run
+    full backup before and after (backup timestamp ...)
+
+2021-02-06	09:00	09:52	sysad	setup and test HTTP access to gitolite
+    also install and configure cgit
+2021-02-06	10:17	10:40	teach	setup boss's access to cgit, show him how to use it
+2021-02-06	11:00	11:33	plan	discuss fate of abandoned git repos
+2021-02-06	14:00	16:20	sysad	backup repos that won't be migrated
+    3-2-1 rule, as usual
+    tapes dispatched via internal courier, reference number: ....
+2021-02-06	16:45	18:00	plan	help boss with budget for next year's laptops
