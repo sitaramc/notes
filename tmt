@@ -44,9 +44,9 @@ You can access this help at any time by hitting F1.
     the current line.  If you type in an fzf query string, the totals will be
     further reduced to those matching the query
 
--   If you want totals *across* dates, use fzf's filtering, multi-selection
-    (TAB key), or select all (ctrl-a), and then hit F3.  This gets you totals
-    for an arbitrary set of lines you choose.
+-   F3 shows totals for *selected* rows only, regardless of date.  Use fzf
+    features (filtering, multi-selection with TAB, select all with ctrl-a) to
+    select rows you want, then hit F3.
 
 -   F4 to change text, fix timestamps, add notes and comments, etc., in your
     \$EDITOR.  Tmt only looks at lines starting with YYYY-MM (e.g., 2021-01);
@@ -66,8 +66,8 @@ EOF
 
 total() {
     # this takes multiple lines of stdin and produces tag-wise totals, and a grand total
-    perl -lanE '
-        next if /_____/;
+    perl -MTime::Piece -lanE '
+        $F[2] = localtime->strftime("%H:%M") if /_____/;
         $count++;
         ($sh, $sm, $eh, $em) = split /:/, "$F[1]:$F[2]";
         $diff = $eh*60+$em - $sh*60-$sm;
@@ -78,7 +78,7 @@ total() {
             say "$_\t" . hhmm($sum{$_}) for sort keys %sum;
             $rd = ""; $rd = " on $ENV{RD}" if $ENV{RD};
             printf "\ntotal:\t%s", hhmm($sum) . " from $count entries$rd\n";
-            printf "current time: " . qx(date +%H:%M);
+            printf "current time: " . localtime->strftime("%H:%M");
         }' |
     less -c
 }
@@ -93,7 +93,7 @@ f7_new() {
 enter_stop_start() {
     # read line.  If line is a running task (i.e., contains "_____"), just stop it.
     # otherwise it's a different line (task), so stop the *running* task, then restart the selected task
-    # (i.e., take fields 4 and 5 into tag and text and start it)
+    # (i.e., take fields 5 and 6 into tag and text and start it)
     IFS= read -r -u3 l
     stop_task
     if [[ $l =~ _____ ]]
@@ -133,11 +133,15 @@ do
             f3 )
                 cat <&3 | total ;;
             f4 )
-                ${EDITOR:-vim} $FILE ;;
-            f10 )
-                break ;;
+                IFS= read -r -u3 line
+                line=${line//\//\\/}
+                ${EDITOR:-vim} $FILE "+/\\M$line" ;;
+            f5 )
+                continue ;;
             f7 )
                 f7_new ;;
+            f10 )
+                break ;;
             *  )
                 # "ENTER"
                 enter_stop_start ;;
@@ -146,8 +150,8 @@ do
         --print-query \
         --query="$query" \
         --header-lines=1 \
-        --header="ENTER:stop/start, F1:help, F3: total selected rows only, F4:edit file, F7:new task, F10:quit" \
-        --bind ctrl-a:select-all --expect=f1,f3,f4,f7,f10 \
+        --header="ENTER:stop/start, F1:help, F3:(see help), F4:edit, F5:refresh, F7:new, F10:quit" \
+        --bind ctrl-a:select-all --expect=f1,f3,f4,f5,f7,f10 \
         --preview="grep ^{1} $FILE | fzf -f {q} -e +s | env RD={1} bash -c total" \
         --preview-window=top:50% )
 done
