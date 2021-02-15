@@ -1,0 +1,46 @@
+# dsf -- directory specific functions
+
+I often have functions that pertain to a specific project, and I don't want to pollute my main `.zshrc` or `.bashrc` with these functions.
+
+This script helps me with that.
+
+It merely looks in the current directory, and all the way up to `$HOME` for files called `.__`, and sources them in order.  These files are expected to contain shell functions.  After sourcing all of them it executes the arguments (arg-1 is presumably the name of a shell function to invoke).
+
+(For security reasons, if `$PWD` is not under `$HOME`, *only* the file in `$HOME` is sourced, nothing else.  So if you're in `/tmp` it won't source `/tmp/.__` even if it is present).
+
+So for example if you had the following in one of those `.__` files:
+
+    pub() {
+        git push ...
+        git archive HEAD | ssh ... tar -C ... -xvf -
+    }
+
+you'd run `pub` to publish the contents using the commands given, and it would only run from within this directory or its subdirectories.
+
+**TIP** I also have (in zsh):
+
+    command_not_found_handler () {
+            dsf "$@"
+            exit $? 2> /dev/null
+    }
+
+so I can just type these functions directly in zsh.  For bash, the function name is `command_not_found_handle` if you want to do the same thing.
+
+Finally, it has a simple "list" capability to remind you of the functions available.  If you add comments with the following pattern:
+
+    # (group) function: some description or usage
+
+then running `list` without any arguments will list all these lines, and running `list pattern` will show them but highlight the pattern in the output.
+
+If it helps you understand how this looks, this is what I get when I am in root and type `list` on a machine that is running Ubuntu:
+
+    # (pac) aptlg: apt list | grep $1
+    # (pac) apti: apt info
+    # (pac) aptI: apt install
+    # (load) cpu: cpulimit new task or PID.  E.g., cpu 10 foo, or cpu 10 `pidof foo`
+    # (net) iwsc: list SSIDs from iwlist scan of available APs
+    # (net) nms: network status including wifi
+    # (net) wifi0: wifi off
+    # (net) wifi1: wifi on
+    # (net) myap: nmcli dev wifi connect my_home_AP
+    # (net) myhs: nmcli dev wifi connect my_phone_hotspot_AP

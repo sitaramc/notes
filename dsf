@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# dsf -- directory specific functions
+#
+# TL;DR
+#   -   add a file called ".__" containing shell functions in some directory
+#   -   those functions are not available only in that directory and below
+#
+# for more, see "dsf.mkd" in the same place you found this file, probably https://github.com/sitaramc/notes/blob/master/dsf.mkd
+
+shopt -s inherit_errexit
+set -euo pipefail
+IFS=$'\n\t'
+# set -x
+# export PS4=':.$LINENO:'
+
+__files() (
+    set +e
+    while [[ $PWD == $HOME/* ]]; do
+        [[ -f $PWD/.__ ]] && echo $PWD/.__
+        cd ..
+    done
+    echo $HOME/.__
+)
+
+# deal with listing available functions
+[[ -z "${1:-}" ]] && set -- list
+list() {
+    cat `__files` |
+        grep -E '^# \(\S+\)' | grep --color -e $ -e ${1:-dummy}
+}
+die() { echo >&2 "$@"; exit 1; }
+
+# actual functions get pulled in here
+for __f in `__files`; do source $__f; done
+
+[[ -n "${D:-}" ]] && set -x
+"$@"
