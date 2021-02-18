@@ -116,8 +116,6 @@ FILE=time.tsv
     f1_help
 }
 
-unset FZF_DEFAULT_OPTS
-
 # ----------------------------------------------------------------------
 
 export -f total
@@ -147,7 +145,7 @@ do
                 # "ENTER"
                 enter_stop_start ;;
         esac
-    } 3< <( grep -E -e ^DATE -e '^[0-9]{4}-[0-9]{2}' $FILE | fzf -d$'\t' -m -e +s --tac --info=inline \
+    } 3< <( grep -E -e ^DATE -e '^[0-9]{4}-[0-9]{2}' $FILE | fzf -d$'\t' --multi --tac \
         --print-query \
         --query="$query" \
         --header-lines=1 \
