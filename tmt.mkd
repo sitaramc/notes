@@ -10,7 +10,7 @@ My needs:
 
 I hate making UIs (in fact I've never made one).  But I love `fzf`, so why not?
 
-If you're not familiar with fzf, you may prefer to watch the asciinema at <https://asciinema.org/a/389496> (or download it from [here](tmt.cast) and play it at double speed (`asciinema play -s 2 tmt.cast`).  [NOTE: for some reason when I play it locally, it hangs when it enters the part where it opens up an editor.  Please hit the space bar when that happens.  The online version does not have this problem].
+If you're not familiar with fzf, you may prefer to watch the asciinema at <https://asciinema.org/a/392147> (or download it from [here](tmt.cast) and play it at double speed (`asciinema play -s 2 tmt.cast`).  [NOTE: for some reason when I play it locally, it hangs when it enters the part where it opens up an editor.  Please hit the space bar when that happens.  The online version does not have this problem].
 
 If you **are** familiar with `fzf`, the following textual description may suffice for you to get going.  This is the same information that is available if you hit `F1` in the program.
 
@@ -20,8 +20,9 @@ If you **are** familiar with `fzf`, the following textual description may suffic
     is just `"_____"`.  At most one task can be running at any time.  If no
     task is running, it means you're "off the clock" (e.g., at end of day).
 
--   **F7** creates a new task and marks it as "running".  Any task previously
-    marked as running is given an end time to mark it as stopped.
+-   **F7** creates a new task with whatever you typed into the fzf query field, and marks it as "running".
+    The first word is considered a "TAG" and the rest is "text".  Any task
+    previously marked as running is given an end time to mark it as stopped.
 
 -   **ENTER** on a stopped task resumes it.  As with F7, any previously running
     task is marked stopped.
@@ -33,16 +34,19 @@ If you **are** familiar with `fzf`, the following textual description may suffic
     on the current line.  If you type in an fzf query string, the totals will
     be further reduced to those matching the query
 
--   F3 shows totals for *selected* rows only, regardless of date.  Use fzf
-    features (filtering, multi-selection with TAB, select all with ctrl-a) to
-    select rows you want, then hit F3.
+*   The **preview window** shows two sets of tag-wise totals and grand totals:
+
+    *   one for the date on the current line, filtered by the fzf query string
+        if you typed one in
+    *   one for all *selected* rows (or current row if you did not select any)
+
+    REMINDER: multi-select using TAB and "select all" using Ctrl-A are enabled.
 
 -   **F4** to change text, fix timestamps, add notes and comments, etc., in
     your \$EDITOR.  Tmt only looks at lines starting with YYYY-MM (e.g.,
     2021-01); everything else is ignored so you can type in whatever you want!
 
     -   WARNING: there is NO ERROR CHECKING on dates and times!
-
     -   WARNING: don't remove the hard tabs separating the fields on the lines
         that tmt *does* care about :)
 

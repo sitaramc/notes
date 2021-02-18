@@ -15,46 +15,40 @@ add_task() {
     printf "%s\t%s\t%s\t%s\t%s\n" "`date -I`" "`date +%H:%M`" "_____" "$tag" "$text" >> $FILE
 }
 
-get_details() {
-    echo "please supply a TAG (a short word or mnemonic string) and a TEXT (a line of arbitrary text):"
-    read -p "TAG: " tag
-    read -p "TEXT: " text
-}
-
 f1_help() {
     cat <<EOF | less -c
 Help for "track my time"
 
 You can access this help at any time by hitting F1.
 
--   "Currently running task": a task is "running" if the second HH:MM field is
+*   "Currently running task": a task is "running" if the second HH:MM field is
     just "_____".  At most one task can be running at any time.  If no task is
     running, it means you're "off the clock" (e.g., at end of day).
 
--   F7 creates a new task and marks it as "running".  Any task previously
-    marked as running is given an end time to mark it as stopped.
+*   F7 creates a new task with whatever you typed into the fzf query field.
+    The first word is considered a "TAG" and the rest is "text".  Any task
+    previously marked as running is given an end time to mark it as stopped.
 
--   ENTER on a stopped task resumes it.  As with F7, any previously running
+*   ENTER on a stopped task resumes it.  As with F7, any previously running
     task is marked stopped.
 
--   ENTER on a running task stops it.  Now you're off the clock (nothing is
+*   ENTER on a running task stops it.  Now you're off the clock (nothing is
     running).
 
--   The preview window shows tag-wise totals and grand totals for the date on
-    the current line.  If you type in an fzf query string, the totals will be
-    further reduced to those matching the query
+*   The preview window shows two sets of tag-wise totals and grand totals:
 
--   F3 shows totals for *selected* rows only, regardless of date.  Use fzf
-    features (filtering, multi-selection with TAB, select all with ctrl-a) to
-    select rows you want, then hit F3.
+    *   one for the date on the current line, filtered by the fzf query string
+        if you typed one in
+    *   one for all *selected* rows (or current row if you did not select any)
 
--   F4 to change text, fix timestamps, add notes and comments, etc., in your
+    REMINDER: multi-select using TAB and "select all" using Ctrl-A are enabled.
+
+*   F4 to change text, fix timestamps, add notes and comments, etc., in your
     \$EDITOR.  Tmt only looks at lines starting with YYYY-MM (e.g., 2021-01);
     everything else is ignored so you can type in whatever you want!
 
-    -   WARNING: there is NO ERROR CHECKING on dates and times!
-
-    -   WARNING: don't remove the hard tabs separating the fields on the lines
+    *   WARNING: there is NO ERROR CHECKING on dates and times!
+    *   WARNING: don't remove the hard tabs separating the fields on the lines
         that tmt *does* care about :)
 
 Caveat:
@@ -67,6 +61,10 @@ EOF
 total() {
     # this takes multiple lines of stdin and produces tag-wise totals, and a grand total
     perl -MTime::Piece -lanE '
+        BEGIN {
+            printf "--- %s ---\n", +shift;
+            @ARGV = ();     # actual computation only uses STDIN
+        }
         $F[2] = localtime->strftime("%H:%M") if /_____/;
         $count++;
         ($sh, $sm, $eh, $em) = split /:/, "$F[1]:$F[2]";
@@ -76,18 +74,22 @@ total() {
         sub hhmm { $mm=shift; return sprintf "%02d:%02d", int($mm/60), $mm%60; }
         END {
             say "$_\t" . hhmm($sum{$_}) for sort keys %sum;
-            $rd = ""; $rd = " on $ENV{RD}" if $ENV{RD};
-            printf "\ntotal:\t%s", hhmm($sum) . " from $count entries$rd\n";
-            printf "current time: " . localtime->strftime("%H:%M");
-        }' |
+            printf "TOTAL:\t%s from %d entries\n\n", hhmm($sum), $count;
+        }' "$@" |
     less -c
 }
 
 f7_new() {
     stop_task
-    cat <&3 > /dev/null     # flush rest of output from fzf
-    get_details
-    add_task
+    cat <&3 > /dev/null             # flush rest of output from fzf
+    if [[ "$*" =~ " " ]]; then
+        tag="${*%% *}"
+        text="${*#* }"
+        add_task
+    else
+        echo "need a TAG word and some TEXT, separated by at least one space" | less
+        return 0
+    fi
 }
 
 enter_stop_start() {
@@ -130,8 +132,6 @@ do
         case $key in
             f1 )
                 f1_help ;;
-            f3 )
-                cat <&3 | total ;;
             f4 )
                 IFS= read -r -u3 line
                 line=${line//\//\\/}
@@ -139,7 +139,8 @@ do
             f5 )
                 continue ;;
             f7 )
-                f7_new ;;
+                f7_new "$query"
+                query='' ;;
             f10 )
                 break ;;
             *  )
@@ -150,8 +151,9 @@ do
         --print-query \
         --query="$query" \
         --header-lines=1 \
-        --header="ENTER:stop/start, F1:help, F3:(see help), F4:edit, F5:refresh, F7:new, F10:quit" \
-        --bind ctrl-a:select-all --expect=f1,f3,f4,f5,f7,f10 \
-        --preview="grep ^{1} $FILE | fzf -f {q} -e +s | env RD={1} bash -c total" \
+        --header="ENTER:stop/start, F1:help, F5:refresh, F7:new, F10:quit" \
+        --bind ctrl-a:select-all --expect=f1,f4,f5,f7,f10 \
+        --preview="grep ^{1} $FILE | fzf -f {q} -e +s | bash -c 'total \"totals for {1} (possibly filtered by fzf query)\"';
+                  printf '%s\n' {+} | bash -c 'total \"totals for selected tasks or current task only\"'" \
         --preview-window=top:50% )
 done

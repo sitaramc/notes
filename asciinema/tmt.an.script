@@ -4,10 +4,11 @@ echo "go to the target terminal NOW!"
 sleep 3
 
 key() { xdotool key $1; sleep 1; }
+f7() {  xdotool type "$1"; sleep ${2:-2}; key F7; }
 show() {  xdotool type "$1"; sleep ${2:-2}; key ctrl+u; }
 enter() { xdotool type "$1"; sleep ${2:-2}; key Return; }
 
-enter 'rm tmt.cast; asciinema rec -t "Track My Time, v2" tmt.cast' 1
+enter 'rm tmt.cast; asciinema rec -t "Track My Time, v3" tmt.cast' 1
 enter 'faketime -f "+0 x20" bash -l' 1
 enter ':' 0
 enter ':' 0
@@ -17,22 +18,16 @@ enter ':' 0
 enter ':' 0
 enter tmt 1
 
-show 'F7 creates a new task' 2
-key F7
-enter sysad 1
-enter 'configure ... for ...' 1
+show 'type in a TAG, then a space, and some text, then press F7 to create a new task' 4
+f7 'sysad configure ... for ...' 3
 sleep 2
 
-show 'F7 creates another task and switches to it (previous task is marked stopped)' 4
-key F7
-enter doc 1
-enter 'document ... for ...' 1
+show 'now create another task the same way, and notice that tmt makes the new task active' 4
+f7 'doc start on documentation for ...' 2
 sleep 2
 
-show 'F7 a third time!' 2
-key F7
-enter test 1
-enter 'test ... for ...' 1
+show 'do this a third time!' 2
+f7 'test run test scripts for ...' 1
 sleep 2
 
 show 'ENTER on an older task (a) stops current task and (b) resumes older task' 4
@@ -64,12 +59,12 @@ key F10
 
 enter ':' 0
 enter ': now we will pull in a file I had previously prepared'
-enter 'cp t/time.tsv .'
+enter 'cp prepared-time.tsv time.tsv'
 enter 'cat time.tsv'
 sleep 4
 
 enter tmt
-show 'notice the totals in the top window as we move between dates' 4
+show 'notice the "totals for <date>" in the top window as we move between dates' 4
 key Up
 key Up
 key Up
@@ -104,25 +99,20 @@ xdotool type o; sleep 1
 key BackSpace
 xdotool type o; sleep 1
 key BackSpace
-xdotool type o; sleep 1
-key BackSpace
 
 xdotool key ctrl+u; sleep 1
 show 'F1 gets you help'
 key F1; sleep 1
 xdotool type q; sleep 1
 
-show 'so far, all the totals you saw were for one day, never across days' 4
-show 'F3 will get you totals for selected records' 3
-show 'use the features of fzf to select records' 2
+show 'so far, we only looked at totals for the date on the current line' 4
+show 'the second set of totals are for *selected* records' 3
+show 'use the features of fzf to select records to change those totals' 3
 show 'e.g., TAB for multi-select, or filter on some text and Ctrl-a to select all' 4
-show 'then hit F3.  This will pipe to "less"' 2
-xdotool type gitolite; sleep 1
-xdotool key ctrl+a; sleep 2
-key F3
+show 'I will type in a filter, then I will hit Ctrl-a to "select all" now' 4
+xdotool type gitolite; sleep 2
+xdotool key ctrl+a; sleep 4
 sleep 3
-key F3
-sleep 2
 
 xdotool key ctrl+u; sleep 1
 show "...that's all folks!..."
