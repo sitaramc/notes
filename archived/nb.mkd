@@ -1,5 +1,14 @@
 # Search, edit, and create entries in a "notebook" directory
 
+----
+
+**2021-02-23** -- this is now archived, and a more general purpose tool called
+`vgp` has replaced the search and edit part.  Creating a new file is trivial
+enough that I left it out as a manual process.
+
+----
+
+
 (Basically a perl 1-liner, one fzf command, vim, and a bit of scaffolding!
 After several false starts with various complicated programs I realised that
 fzf had ` --read0`.  Woohoo; searching by **paragraph** is now trivial!)

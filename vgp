@@ -1,4 +1,9 @@
 #!/bin/bash
+shopt -s inherit_errexit
+set -euo pipefail
+IFS=$'\n\t'
+# set -x
+# export PS4=':.$LINENO:'
 
 # Similar to using "Rg" from the fzf-vim plugin for vim, but in **paragraph
 # mode**!  A paragraph ends at a blank line (or eof).
@@ -41,9 +46,10 @@ set -o pipefail
 # we need this to know whether the user hit Crl-G
 
 # no arguments?
-[[ -z $1 ]] && { echo >&2 "at least one argument please!"; exit 1; }
+[[ -z ${1:-} ]] && { echo >&2 "Usage: $0 fzf-query-string [files/dirs]"; exit 1; }
 
 # ----------------------------------------------------------------------
+# preview (invoked by fzf)
 
 # For the life of me I could not figure out how to roll this functionality
 # directly into the `--preview=` option!  Oh well, this works fine too.
@@ -51,18 +57,22 @@ set -o pipefail
     shift
     q="$*"
     q=${q// /\\|}
-    grep --color=always -i -e '$' -e $q
+    grep --color=always -i -e '$' -e $q -e 20..-..-.. -e XXX -e TODO -e NOTE -e WARNING -e OBSOLETE -e ERROR
+    # I'm sure this code won't survive past 2099.  I know *I* won't :-)
     exit 0
 }
 
 # ----------------------------------------------------------------------
+# main
 
-x=$(fd -t f |
+query="$1"; shift       # could be "foo !bar"; doesn't have to be just one word
+[[ -z ${1:-} ]] && set -- .
+
+x=$(find "$@" -type f |
     file -0 -p -f - |
     perl -ne 'next unless /\0: .*text/; s/\0.*//; print' |
-    perl -ne 'BEGIN{@ARGV=<>; chomp @ARGV;} $_ =~ s/\n/\0/ if $_ eq "\n" or eof; print "$ARGV:$.:$_"; close ARGV if eof' |
-    fzf -q "$*" \
-        --tac \
+    perl -ne 'BEGIN{@ARGV=<>; chomp @ARGV;} $_ =~ s/\n/\0/ if $_ eq "\n" or eof; print "$ARGV:$.:$_"; close ARGV if eof' | expand |
+    fzf -q "$query" \
         --read0 \
         --print-query \
         --color=hl:12,hl+:12 \
