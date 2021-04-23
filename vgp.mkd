@@ -25,10 +25,10 @@ You know very well that `:Rg` won't find it; they're all on different lines.
 
 That's why you have `vgp`.  Well... kind of.  There's a fair bit of
 scaffolding, and I needed it more at the command line than within vim, so it's
-actually shell script.  (I'm sure someone could wrap it inside some vimscript;
-only the last part -- which invokes `vim` -- would need to change).
+actually a shell script.  (I'm sure someone could wrap it inside some
+vimscript; only the last part -- which invokes `vim` -- would need to change).
 
-So, `vgp fd file fzf perl` will find the code you're looking for.  Or you can
+So, `vgp "fd file fzf perl"` will find the code you're looking for.  Or you can
 start with `vgp fd` and then interactively add on the other words.
 
 I'm very taken with this bit of code chicanery to make my favourite tool `fzf`
