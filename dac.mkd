@@ -5,168 +5,126 @@ known ones like GNU Stow and `vcsh` to lesser known ones too numerous to
 mention.  People have even used tools like Ansible, Chef, Puppet, etc., for
 this, if I am not mistaken.
 
-<!--ts-->
-   * [the most important thing I need](#the-most-important-thing-i-need)
-   * [the basic idea](#the-basic-idea)
-   * [updating a set of files](#updating-a-set-of-files)
-      * ["in either direction"](#in-either-direction)
-   * [putting it on a new system](#putting-it-on-a-new-system)
-   * [adding new files](#adding-new-files)
+But they're all missing one feature that is very important to me: **do not
+force a change if I don't want it right now**, whether it is committing a
+change **to** the repo, or accepting a change **from** the repo into the local
+filespace.
 
-<!-- Added by: sitaram, at: Sat 16 Nov 2019 10:55:05 PM IST -->
-
-<!--te-->
+Note that this script runs as root, since it manages dot files for multiple
+users as well as various system config files.
 
 ----
 
-# the most important thing I need
+# the most important things I need
 
-I took a look at all the big ones, even tried out one or two for a bit, but
-none of them appeared to do the one thing I needed: **do not force a change if
-I don't want it right now**, whether it is committing a change **to** the
-repo, or accepting a change **from** the repo into the local filespace.
+1.  Basically, any file on any machine can have minor differences from the
+    version in the git repository.
 
-And I need this to be pretty granular; in fact I use `vimdiff` to actually
-propagate changes.  No blindly copying files and overwriting local
-differences!  (Git people are used to keeping some changes away from the
-remote master; why can't we do that with dotfiles and config files?)
+    For example, bashrc on one machine may need a couple of environment
+    variables defined differently.  Or a script on a machine running an LTS
+    distro may have differences because the packages on that distro are older
+    or missing.  Or the name of the wifi device, used by just a couple of
+    scripts, may be different on different machines.
 
-By the way, this script does depend on vim, but that would be a trivial change
-to make if someone wants me to make it more generic.
+    So I need this to be pretty granular; in fact I use `vimdiff` to actually
+    propagate changes.  No blindly copying files in either direction!
 
-# the basic idea
+2.  I need to manage not just user's dotfiles, but also important system files
+    like `/etc/ssh/sshd_config`, `/etc/sudoers`, crontabs, and many more.
 
-1.  Every file that we're interested in tracking, falls into one of these
-    categories:
+    I also have some differences between machines (home laptop versus work
+    laptop, for example), and some between distributions (Manjaro versus
+    Xubuntu versus Fedora).
 
-    -   any user on any system should have this file (most dotfiles fall into
-        this category)
-    -   this file belongs to some specific user.  (Note that `root` is a user
-        too!)
-    -   a "system" file; things like `/etc/ssh/sshd_config`, `/etc/sudoers`,
-        and so on
+# setup
 
-2.  Within the second and third of those categories above, there *could* be
-    further divisions:
+1.  Setup a git repo for your dotfiles.  Create subdirectories for your main
+    user (e.g., "sitaram"), "root", and "system".  Create other subdirectories
+    if you need (see example in next step).
 
-    -   only for this distribution (Manjaro, Fedora, etc)
-    -   only for this specific host
+2.  Setup a `dac.dirs` file in the repo, but do not commit it, because it will
+    be different on each machine.  (You may want to add it to your
+    `.gitignore` file).
 
-When dac runs, it checks all of these subdirectories in the dac repo, (if they
-exist) for files that it should compare against the corresponding file on the
-machine where you are processing this.  Specifically, the categories in bullet
-1 above are represented by the subdirectories (a) `user`, (b) `sitaram`,
-`root`, etc., and `system`.
+    The **simplest** `dac.dirs` contains just one line, for example:
 
-Bullet 2 gives you *additional* subdirectories like `system-manjaro`,
-`system-sita-work-lt`, or `sitaram-sita-home-lt` (where sita-home-lt and
-sita-work-lt are short hostnames), `root-sita-home-lt` and so on.
+        /home/sitaram       sitaram
 
-Just to illustrate, here's a somewhat modified list from my dac repo (I always
-use two additional users, `ff` and `g3`; see
-[here](https://github.com/sitaramc/notes/blob/master/security.mkd) for more on
-that):
+    where "sitaram" is a subdirectory in your git repo.  But this is not
+    really using this tool's power :)
 
-    ff
-    ff-sita-home
-    ff-sita-work
-    g3
-    root
-    root-sita-home
-    root-sita-work
-    sitaram
-    sitaram-sita-home
-    sitaram-sita-work
-    system
-    system-fedora
-    system-manjaro
-    system-centos
-    user
+    For example, the `dac.dirs` file on my work laptop looks somewhat like
+    this:
 
-# updating a set of files
+        /home/sitaram       allusers    sitaram     sitaram-work-laptop
+        /root               allusers    root        root-work-laptop
+        /                   system      xubuntu     work-laptop
 
-Running `dac system root myusername` is usually sufficient.  If people use
-this script, I'd be happy to move the default list out of the code and work
-out some way in which it is supplied outside, so you can just run `dac`.
+    and this is on my home laptop, where I have an extra userid (used for
+    testing gitolite):
 
-Each file that differs from its parent, is shown using `vimdiff`.  (Same thing
-here: if people use it and want to remove the hardcoded vim dependency, I can
-fix that; just too lazy to do it if I am the only user!)
+        /home/sitaram       allusers    sitaram     sitaram-home-laptop
+        /home/g3            allusers    g3
+        /root               allusers    root        root-home-laptop
+        /                   system      manjaro     work-laptop
+
+    The first column (must be a fully-qualified directory name) is a
+    "destination", and the others are "source" subdirectories in the git repo.
+
+    A particular destination gets files from all of the source subdirectories
+    listed on its line.
+
+# the basic workflow
+
+The basic workflow is:
+
+1.  cd to the repo, then git pull (if needed)
+
+2.  run `dac`
+    *   `vimdiff` will popup on each file that has new differences between the
+        repo and your local filesystem
+    *   use `vimdiff` to manually propagate changes in either direction and save
+
+3.  finally, commit and push.
+
+When you run `dac`, each file that differs from its parent, is shown using
+`vimdiff`.
 
 Copy whatever changes you like (*in either direction*), and save the files.
-If the files are still different, then dac will put a hash of their current,
-**exact** contents in a skiplist so you won't see it next time you run it.
+If the files are still different, then dac will remember the difference you
+chose to ignore, so *next time* you won't see it again, as long as the
+difference is exactly the same.  (*This part is rather clever; it uses git's
+excellent `patch-id` sub-command to add an entry to a "skiplist"*.)
 
 You *will* see the files if either of them changes even a tiny bit of course,
-so it's quite safe.  Also, the skip list is plain text; you can manually
-remove lines from it if you wish to.  Or just delete the whole file to
-"unskip" everything.
-
-## "in either direction"
-
-That phrase is important.  That is how changes you make on a system while
-using it, propagate back to the dac repo and then on to other systems.
-
-After each run of dac, you should see a `git status -s -b` run, so you know
-if you need to do a git commit/push etc.  Dac does not do all this for you.
-(It could, but again, I prefer it this way, so until people ask that's how it
-will stay!)
+so it's quite safe.  Also, the skiplist is plain text; you can manually remove
+lines from it if you wish to.  Or just delete the whole file to "unskip"
+everything.
 
 # putting it on a new system
 
-This is pretty much the same as updating, because if dac finds some files
-missing, it will simply copy them over.
-
-Any files that already existed on the new account (typical example:
-`~/.bashrc`), will show up in a vimdiff, and it's your call how you want to
-deal with it.  You could simply ignore all the differences (i.e., quit the
-`vimdiff` window), and dac will accept your decision and not bother you with
-this file again unless either version changes at some later point in time.
+Just clone the repo, create a `dac.dir` with the sources you want for each
+destination, and run `dac`.  That should be it.
 
 # adding new files
 
-Adding new files and directories is easy.  (Everything below applies to entire
-directories the same as individual files).
+Let's say you want to add a script that is living in `~g3/bin` (see my example
+above.
 
-First, the file (or directory) is either a "user" file (i.e., it falls under
-`/home` or `/root`), or it is a "system" file.  So the subdirectory in the dac
-repo you will be copying this to, is, tentatively, `system` or the user name
-(like `sitaram` or `root`).
+First, decide which subdirectory of the git repo this should go to.  If it's
+applicable for all users, that may be the `allusers` subdirectory, and so on.
 
-Next, for "user" files, you need to decide if this file should go to all users
-on all machines, regardless, in which case the subdirectory is simply `user`.
-If yes, you can move to the next step, which is running `dac add`; see below.
-(The vast majority of dotfiles and configs should fall into this bucket).
+Let's say in this case we decide this file is only for the `g3` user.  To add
+this file, you'd just run:
 
-If that is not the case, then you decide if it should be specific to the
-distro running on this machine, or maybe even specific to this machine itself.
-In this case suffix `-dist` or `-host` to the subdirectory name you have so
-far.  (So, `system` may become `system-dist`, or `sitaram` may become
-`sitaram-host`).
+    cd ~g3
+    cp --parents bin/my-script $DAC_REPO/g3
+    cd $DAC_REPO
+    ...now git add, commit, push...
 
-That's it; you can run the add command now.  For example, let's say this
-particular machine developed a keyboard problem, and you had to use xmodmap to
-use some other (unused) keys in place of the dead keys.  To save that into
-your config, you'd run:
+replacing `$DAC_REPO` with the path to the git repo you're using.
 
-    dac add sitaram-host /home/sitaram/.xmodmaprc
+This function can be added to the script; let me know if you need it.
+Generally, adding files is pretty rare for me now -- almost everything I ever
+need is already in there :)
 
-(As before, you still need to add/commit/push.  Also, please supply a full
-path to the file being added!)
-
-As another example, let's say you're on your Manjaro laptop, and you wrote
-yourself a wrapper for `pacman`, the package manager tool, that incorporates
-`fzf` and lets you interactively search for packages before installing them.
-You might run:
-
-    dac add root-dist /root/bin/wrap-pm
-
-to record this file.
-
-Just to be clear, you **don't** have to use the actual hostname or the distro
-name in these two examples; dac will pick them up (from `hostname -s`, and
-from the `ID` field in `/etc/os-release`, respectively) and use them.  For
-example the pacman wrapper will go into the `root-manjaro` subdirectory.
-
-I don't see adding new files as something that happens a lot, so this should
-be fine.
