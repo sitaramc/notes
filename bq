@@ -174,8 +174,16 @@ _work_1() {
 [ -z "$1" ] && exec sh -c "${BQ_FILEMANAGER:-vifm} $QDIR"
 
 # ----------------------------------------------------------------------
-
 # some command was given; add it to the queue
-ID=`date +%s`.$$.${1//[^a-z0-9_.-]/}
+
+# check for a task label via `bq -L label cmd ...`
+if [ "$1" == "-L" ]; then
+    [ -z "$3" ] && die "-L needs a task label"
+    LABEL=$2; shift; shift
+else
+    LABEL=$1
+fi
+
+ID=`date +%s`.$$.${LABEL//[^a-z0-9_.-]/}
 pwd                 > $QDIR/q/$ID
 printf "%s\n" "$@" >> $QDIR/q/$ID
