@@ -115,8 +115,9 @@ so far.
 
 # files in the QDIR
 
-The Q directory, which is by default `/dev/shm/bq-$USER-default`, contains all
-the files that make bq tick.  An explanation of what they are follows.
+The Q directory, which is by default `/dev/shm/bq-$USER-default` (override by
+setting `$QDIR`), contains all the files that make bq tick. An explanation of
+what they are follows:
 
 (Side note: why `/dev/shm`?  I prefer /dev/shm for output files; I assume most
 jobs output is small enough (otherwise you would have redirected it!) I'm more
