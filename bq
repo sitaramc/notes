@@ -187,3 +187,4 @@ fi
 ID=`date +%s`.$$.${LABEL//[^a-z0-9_.-]/}
 pwd                 > $QDIR/q/$ID
 printf "%s\n" "$@" >> $QDIR/q/$ID
+echo "$ID"

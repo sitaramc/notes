@@ -71,9 +71,9 @@ Start a task by just prefixing the command with "bq":
 If a worker is free it will start running immediately, otherwise it will run
 when a worker becomes free.
 
-Call `bq -L LABEL COMMAND...` to give the task a custom label, otherwise it
-uses the first word of the command. Spaces/special characters will be stripped
-from labels.
+bq will print the task file identifier. Call `bq -L LABEL COMMAND...` to give
+the task a custom label, otherwise it uses the first word of the command.
+Spaces/special characters will be stripped from labels.
 
 You can cancel a task in queue by simply running `bq`, which opens up your file
 manager, and deleting the appropriate file in the `q` directory.
