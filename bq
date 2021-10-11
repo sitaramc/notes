@@ -90,7 +90,9 @@ _work_1() {
         mv $ID.running.$$ $ID.exitcode=$ec
         [ "$ec" = "0" ] && mv $ID.* OK
         echo " # $ec" >> w/$$
-        notify-send "`wc -l w/$$`" "`tail -1 w/$$`"
+        if command -v notify-send &> /dev/null; then
+            notify-send "`wc -l w/$$`" "`tail -1 w/$$`"
+        fi
     fi
 }
 
