@@ -41,6 +41,7 @@ something that just uses bash is very useful.
     # start a couple of jobs
     bq some long running command
     bq another command  # will run after the previous one completes
+    bq -L mytask next command  # will use mytask as a label
     # examine the output directory at any time
     bq                              # uses vifm as the file manager
     export BQ_FILEMANAGER=mc; bq    # env var overrides default
@@ -70,7 +71,13 @@ Start a task by just prefixing the command with "bq":
 If a worker is free it will start running immediately, otherwise it will run
 when a worker becomes free.
 
-You can cancel a task in queue by simply running `bq`, which opens up your file manager, and deleting the appropriate file in the `q` directory.
+bq will print the task file identifier. Call `bq -L LABEL COMMAND...` to give
+the task a custom label, otherwise it uses the first word of the command.
+Spaces/special characters will be stripped from labels.
+
+You can cancel a task in queue by simply running `bq`, which opens up your file
+manager, and deleting the appropriate file in the `q` directory.
+
 
 # status
 
@@ -108,8 +115,9 @@ so far.
 
 # files in the QDIR
 
-The Q directory, which is by default `/dev/shm/bq-$USER-default`, contains all
-the files that make bq tick.  An explanation of what they are follows.
+The Q directory, which is by default `/dev/shm/bq-$USER-default` (override by
+setting `$QDIR`), contains all the files that make bq tick. An explanation of
+what they are follows:
 
 (Side note: why `/dev/shm`?  I prefer /dev/shm for output files; I assume most
 jobs output is small enough (otherwise you would have redirected it!) I'm more
@@ -122,8 +130,8 @@ worker exits, this file is renamed to have a ".exited" extension.
 
 **Tasks**: each task has an **ID**, which looks like
 `1549791234.23456.ffmpeg`.  The first bit is a timestamp (`date +%s`), the
-next is the PID that submitted the job, the third bit is the first word of the
-command (in our example, "ffmpeg").
+next is the PID that submitted the job, the third bit is the label, which
+defaults to the first word of the command (in our example, "ffmpeg").
 
 Here's the lifecycle of a task in terms of the filenames you will see:
 
