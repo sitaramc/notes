@@ -139,7 +139,7 @@ do
             f7 )
                 f7_new "$query"
                 query='' ;;
-            f10 )
+            f10|esc )
                 break ;;
             *  )
                 # "ENTER"
@@ -150,7 +150,7 @@ do
         --query="$query" \
         --header-lines=1 \
         --header="ENTER:stop/start, F1:help, F5:refresh, F7:new, F10:quit" \
-        --bind ctrl-a:select-all --expect=f1,f4,f5,f7,f10 \
+        --bind ctrl-a:select-all --expect=f1,f4,f5,f7,f10,esc \
         --preview="grep ^{1} $FILE | fzf -f {q} -e +s | bash -c 'total \"totals for {1} (possibly filtered by fzf query)\"';
                   printf '%s\n' {+} | bash -c 'total \"totals for selected tasks or current task only\"'" \
         --preview-window=top:50% )
