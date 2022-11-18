@@ -93,8 +93,16 @@ command! xc :set viewcolumns=*{name}..,24{mtime}| zzzInternalXC %a
 command! xm :set viewcolumns=*{name}..,24{mtime}| zzzInternalXM %a
 command! xs :set viewcolumns=*{name}..,8{size}|   zzzInternalXS %a
 command! zzzInternalXC git log --name-only --format=%%n -- %d| CDUP=`git rev-parse --show-cdup` perl -lne 'print if /./ and s(^)($ENV{CDUP}) and -f and not $seen{$_}++' | head -%a %U
-command! zzzInternalXM find -type f -print0 | xargs -0 ls -tr | tail -%a | tac %U
-command! zzzInternalXS find -type f -print0 | xargs -0 ls -Sr | tail -%a | tac %U
+command! zzzInternalXM find -type f -printf '%%TF.%%TT\t%%p\n' | rg -v stversions | sort -k1r | cut -f2 | head -%a %U
+command! zzzInternalXS find -type f -printf '%%12s\t%%p\n'     | rg -v stversions | sort -k1rn | cut -f2 | head -%a %U
+
+" from https://wiki.vifm.info/index.php/How_to_integrate_fzf_for_fuzzy_finding
+" variation that automatically enters directories
+command! FZFcd : set noquickview
+    \| let $FZF_PICK = term('find | grep -v stversions | fzf 2>/dev/tty')
+    \| if $FZF_PICK != ''
+    \|     execute system('[ -f "$FZF_PICK" ] && echo goto || echo cd') fnameescape($FZF_PICK)
+    \| endif
 
 " ------------------------------------------------------------------------------
 " viewers and pre-viewers
@@ -102,7 +110,7 @@ command! zzzInternalXS find -type f -print0 | xargs -0 ls -Sr | tail -%a | tac %
 " HINT: use, f.e., ":f g" on an image to get geeqie to run (default is sxiv)
 
 " Pdf etc
-filextype *.epub,*.pdf,*.ps {zathura}zathura %f %i &, okular %f %i &,
+filextype *.epub,*.pdf,*.ps {okular}okular %f %i &, mupdf %f %i &,
 fileviewer *.epub $HOME/bin/preview-epub
 fileviewer *.pdf pdftotext -nopgbrk %c -
 
@@ -119,7 +127,7 @@ filextype *.avi,*.mp4,*.wmv,*.3gp,*.ogv,*.mkv,*.mpg,*.mpeg,*.vob,
 fileviewer *.avi,*.mp4,*.wmv,*.dat,*.3gp,*.ogv,*.mkv,*.mpg,*.mpeg,*.vob,
         \*.fl[icv],*.m2v,*.mov,*.webm,*.ts,*.mts,*.m4v,*.r[am],*.qt,*.divx,
         \*.as[fx]
-        \ mediainfo %c 2>&1
+        \ exiftool-filtered %c 2>&1
 
 " Web
 filextype *.html,*.htm
@@ -128,19 +136,24 @@ filextype *.html,*.htm
 filetype *.html,*.htm links, lynx
 
 " Man page
-filetype *.[1-8] man ./%c
-fileviewer *.[1-8] man ./%c | col -b
-filetype *.[1-8].gz man ./%c
-fileviewer *.[1-8].gz man ./%c | col -b
+filetype *.[1-8] man -l %c
+fileviewer *.[1-8] man -l %c | col -b
+filetype *.[1-8].gz man -l %c
+fileviewer *.[1-8].gz man -l %c | col -b
 
 " Images
+" - note we use `--browse` in the single file mode because our pqivrc already has it, and it is a toggle
 filextype *.bmp,*.jpg,*.jpeg,*.png,*.gif,*.xpm,*.tif,*.tiff
-        \ {View in geeqie}
-        \ geeqie %f,
-        \ {mediainfo}
-        \ mediainfo %f %m 2>&1,
+        \ {Single file pqiv}
+        \ pqiv --max-depth=0 --disable-backends=archive %f 2>/tmp/vifm.pqiv.error.$USER &,
+        \ {Unrestricted pqiv/image under cursor is repeated}
+        \ env D=%D pqiv --browse %c 2>/tmp/vifm.pqiv.error.$USER &,
+        \ {exiftool filtered}
+        \ exiftool-filtered %f %m 2>&1,
 fileviewer *.bmp,*.jpg,*.jpeg,*.png,*.gif,*.xpm,*.tif,*.tiff
-        \ bgee %c,
+        \ exiftool-filtered %c,
+" notes: pqiv max-depth=0 assumes "browse=1" in pqivrc
+" the D=%D assumes something in pqiv's config which will move/copy a file to "$D"
 " XXX doesn't seem to work: fileviewer *.jpg,*.png shellpic %c
 
 " GPG signature
@@ -173,7 +186,7 @@ fileviewer *.rar unrar v %c
 fileviewer *.7z 7z l %c
 
 " Office files
-filextype *.odt,*.doc,*.docx,*.ods,*.xls,*.xlsx,*.odp,*.ppt,*.pptx libreoffice %f &
+filextype *.odt,*.doc,*.docx,*.ods,*.xls,*.xlsx,*.odp,*.ppt,*.pptx libreoffice %f 2>/dev/null &
 " ??? fileviewer *.doc catdoc %c
 fileviewer *.odt,*.doc,*.docx unoconv -f text --stdout %c
 fileviewer *.ods,*.xls,*.xlsx unoconv -f csv  --stdout %c
@@ -189,10 +202,13 @@ fileviewer *[^/] highlight -O xterm256 --force -s pablo %c
 
 " 'l' toggles showing a git log of entry (whether it is a directory or a file)
 nnoremap l :if &previewprg == '' | set previewprg='git -c color.status=always s; git log --stat --decorate=short --color -- %c 2>&1' | view! | else | set previewprg='' | view | endif<cr>
+nnoremap <c-f> :FZFcd<cr>
 
 " ------------------------------------------------------------------------------
 " Mappings
 
+" HELP: l           -- show git log for file or dir
+" HELP: <C-F>       -- find file or dir using fzf and go to it
 " HELP: <Del>       -- delete selected files
 
 " HELP: VV  select  -- select all
@@ -201,13 +217,10 @@ nnoremap l :if &previewprg == '' | set previewprg='git -c color.status=always s;
 " HELP: ss  display -- sort by size
 " HELP: w   display -- preview mode toggle
 " HELP: W   display -- preview mode -- wrap toggle
-" HELP: x   xo      -- run xo on %c (NOT %f)
+" HELP: x   _play   -- run mpv on file and subtitle
 " HELP: <|> display -- inc/dec pane width
 " HELP: SPC display -- select file and move down
-" HELP: cc1 display -- compare -- by contents, one pane, list dups
-" HELP: cc2 display -- compare -- by contents, two panes, list unique
-" HELP: cn1 display -- compare -- by name, one pane, list dups
-" HELP: cn2 display -- compare -- by name, two panes, list unique
+" HELP: c*  display -- compare -- by name/contents, list dups/unique, one/two panes
 " HELP: rw  display -- switch windows to regular from custom
 " HELP: cd  nav     -- cd elsewhere
 " HELP: gr  find    -- files by content (grep)
@@ -216,10 +229,12 @@ nnoremap l :if &previewprg == '' | set previewprg='git -c color.status=always s;
 " HELP: cp  change  -- cp current file *with* parents to other side
 " HELP: dv  change  -- run vimdiff on %c %D/%c
 " HELP: dV  change  -- run vimdiff on %c %C
-" HELP: yd  extern  -- clip directory name
-" HELP: yf  extern  -- clip file name
-" HELP: sh  extern  -- start a shell
-" HELP: !   extern  -- :!! __ <cursor> %c
+" HELP: I   change  -- rename by adding prefix
+" HELP: A   change  -- rename by adding suffix
+" HELP: yd  extern  -- clip directory name      TODO: DOES NOT WORK
+" HELP: yf  extern  -- clip file name           TODO: DOES NOT WORK
+" HELP: b   extern  -- start a shell, setting $c, $C, $f, and $D
+" HELP: !   extern  -- :!! raf <cursor> %c
 " HELP: @   extern  -- :!!
 nnoremap <delete>   :!ls -ald %f; echo -n "remove these files? "; vifm-pause; rm -rf %f %n<cr>
 
@@ -232,27 +247,31 @@ nnoremap ss :%select<CR>ga:set sort=-size,+dir<cr>
 
 nnoremap w :view<cr>
 nnoremap W :set wrap!<cr>
-nnoremap x :!dm xo %c &<cr>
-" bloody thing does not work without the "&" (vifm waits for xo to finish, and
-" if you hit enter it forces xo to finish too!)
+nnoremap x :!dm __ _play %f &<cr>
+" bloody thing does not work without the "&"
 nnoremap < <c-w>4<
 nnoremap > <c-w>4>
 
 nmap <space> tj
 
-nnoremap ccd1 :compare bycontents listdups     ofone<CR>
+nnoremap cc   :compare<CR>
+nnoremap cd1  :compare bycontents listdups     ofone<CR>
+nnoremap cd2  :compare bycontents listdups     ofboth<CR>
+nnoremap cu1  :compare bycontents listunique   ofone<CR>
+nnoremap cu2  :compare bycontents listunique   ofboth<CR>
+nnoremap ca1  :compare bycontents listall      ofone<CR>
+nnoremap ca2  :compare bycontents listall      ofboth<CR>
 nnoremap cnd1 :compare byname     listdups     ofone<CR>
-nnoremap ccu1 :compare bycontents listunique   ofone<CR>
-nnoremap cnu1 :compare byname     listunique   ofone<CR>
-nnoremap ccd2 :compare bycontents listdups     ofboth<CR>
 nnoremap cnd2 :compare byname     listdups     ofboth<CR>
-nnoremap ccu2 :compare bycontents listunique   ofboth<CR>
+nnoremap cnu1 :compare byname     listunique   ofone<CR>
 nnoremap cnu2 :compare byname     listunique   ofboth<CR>
+nnoremap cna1 :compare byname     listall      ofone<CR>
+nnoremap cna2 :compare byname     listall      ofboth<CR>
 
 nnoremap rw  :set viewcolumns=|regular<cr>
 
 nnoremap cd :cd<space>
-nnoremap gr :!vim "+Grep "<Left>
+nnoremap gr :!vim "+VG "<Left>
 
 set locateprg="find | grep -i %a | sort"
 nnoremap // :locate<space>
@@ -272,9 +291,12 @@ nnoremap A cw
 
 nnoremap yd :!echo %d | xsel -b %i<cr>
 nnoremap yf :!echo %c:p | xsel -b %i<cr>
+" if needed, use this, maybe with a different map:
+" nnoremap yf :!printf "%%s\n" %f:p | xclip -selection clipboard %i<cr>
 
 nnoremap sh :shell<cr>
-nnoremap !  :!! __ %c<Left><Left>
+nnoremap b  :!env c="%c" C="%C" f="%f" D="%D" $SHELL<cr>
+nnoremap !  :!! raf %c<Left><Left>
 nnoremap @  :!
 
 nnoremap qq :quit<cr>
@@ -284,7 +306,7 @@ nnoremap <f3> :!less -c %f<cr>
 nnoremap <f4> :edit<cr>
 nnoremap <f5> :copy &<cr>
 nnoremap <f6> :move &<cr>
-nnoremap <f7> :mkdir<space>
+nnoremap <f7> :mkdir!<space>
 nnoremap <f8> :delete<cr>
 
-nnoremap b  :bmarks
+nnoremap B  :bmarks
