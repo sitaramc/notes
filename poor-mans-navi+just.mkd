@@ -1,0 +1,153 @@
+# poor man's navi+just combo
+
+[navi](https://github.com/denisidoro?/navi) is a cheat-sheet aggregator and a UI to browse them.  I'm not interested in the cheat sheets, but the UI to navigate a curated set of my own commands is something I am interested in.
+
+[just](https://github.com/casey/just) is a "command runner" which allows you to keep all your little script-lets together in one place and run them without polluting the PATH with lots of small scripts.
+
+I wanted a combination of these two:
+
+-   put all my scriptlets in one place
+-   run it directly if I remember the command and it's easy to type
+-   otherwise ask for a UI (using fzf, what else!) to help me pick the right command
+
+This is how I managed to get precisely what I want, and no more, in about 50 lines of shell and perl.
+
+# poor man?
+
+I'm not considering the lack of cheat-sheet integration as a "poor man" thing; that was never my interest anyway.  My inputs are more in the line of what you might use in `just` (i.e., my own scripts) than `navi` (hundreds of helper scripts for dozens of tools).
+
+What I *really* don't have is the "Ctrl-G" stuff in navi -- looks pretty neat, and maybe if I find I really need it I'll switch to navi.
+
+The "poor man" part is that the UI to choose/run the command does not include the wonderfully clean syntax (syntactic sugar, if you will) that navi provides for choosing arguments.  However, it's not that hard to finagle that.  For example, something like this in navi:
+
+    # Change branch
+    git checkout <branch>
+
+    $ branch: git branch | cut -c3-
+
+would become
+
+    ## gcb          # git: change branch
+    gcb() {
+        git checkout `git branch | pick | cut -c3-`
+    }
+
+in my setup.  Similarly, constructs like this in navi:
+
+    # If you select 2 for x, the possible values of y will be 12 and 22
+    echo <x> <y>
+
+    $ x: echo -e '1\n2\n3'
+    $ y: echo -e "$((x+10))\n$((x+20))"
+
+can be done, but without the syntactic sugar:
+
+    foo() {
+        x=$(echo -e '1\n2\n3' | pick)
+        y=$(echo -e "$((x+10))\n$((x+20))" | pick)
+
+        echo $x $y
+    }
+
+You can easily see how this extends to things like killing processes after first searching for the PID, or similar examples.
+
+# `.__` -- my "justfile"
+
+For historical reasons, my equivalent to "Justfile" has the weird name `.__`.  The code is built to "source" any file with that name in (1) the current directory, (2) all parent directories upto the HOME, and (3) `/etc`.
+
+The main script is in appendix A, and is called `__` (same historical reasons!), so normally I'd just run
+
+    `__ foo`        # loosely eqvt to `just foo`
+
+But I also have this in my zshrc so most of the time (i.e., when there is no *real* command of that name), I can just type `foo` and it works:
+
+    command_not_found_handler () {
+            __ "$@"
+            exit $? 2> /dev/null
+    }
+
+Finally, if I don't remember the command to run, I have this function in my zshrc:
+
+    cue () {
+        c="$(__ help | fzf --no-multi -1 -q "${1:-}" | sed -e 's/ *#.*//')"
+        print -z "$c"
+    }
+
+With this, I just type in `cue` and I get a list of all commands with help text, which I have created with this simple format in the `.__` file:
+
+    ## foo          # some help text for command foo
+    foo() {
+        ...body of function foo...
+    }
+
+Or I type in `cue foo` and it shows up all the lines where the command name or help text contains "foo".
+
+This `cue` function only works in `zsh` because of the `print -z` mechanism -- which drops the given string onto the command line so the user can modify it before hitting enter if he wishes to.  I am sure bash must have some way of doing this (navi documentation suggests there must be).
+
+# appendix A -- the `__` script
+
+    #!/bin/bash
+
+    shopt -s inherit_errexit
+    set -euo pipefail
+    IFS=$'\n\t'
+
+    __files() (
+        set +e
+        while [[ $PWD == $HOME/* ]]; do
+            [[ -f $PWD/.__ ]] && echo $PWD/.__
+            cd ..
+        done
+        [[ -f $HOME/.__ ]] && echo $HOME/.__
+        [[ -f /etc/.__  ]] && echo /etc/.__
+    )
+
+    # deal with help
+    [[ -z "${1:-}" ]] && set -- help
+    help() {
+        cat `__files` |
+            grep -E '^## ' | cut -c4-
+    }
+
+    # actual functions get pulled in here
+    for __f in `__files`; do source $__f; done
+
+    "$@"
+
+# appendix B -- the `pick` script
+
+    #!/usr/bin/perl
+    use warnings;
+    use strict;
+    use 5.10.0;
+    use Data::Dumper;
+
+    # Usage: pick [pattern] [command+args [column_number] ]
+    # Example:
+    #   pick rsa 'ls -al .ssh/*' 9      # might print '.ssh/id_rsa' '.ssh/id_rsa.pub' if you picked those two
+    #   pick '' 'df -m' 6               # might print '/boot' if you picked only that line
+
+    # 'pick' is designed for use as an "argment enhancer" in scripts, for example:
+    #   tar cvf `date -I`.tar `pick '' 'find . -type d | grep -v cache'
+
+    # arg 1 is the starting pattern; may be empty
+    # arg 2 fzf default command; optional, overrides FZF_DEFAULT_COMMAND if supplied
+    # arg 3 colum to output; required only if default command produces multi-column output but you need only one
+
+    # my current fzf settings are these; behaviour of this script may be different
+    # if you have different settings
+    #   FZF_DEFAULT_OPTS=--exact --multi --no-sort --reverse --info=inline
+    #   FZF_DEFAULT_COMMAND=fd -HI -L -E .git -E .cache -t f
+
+    my ($pat, $fdc, $col) = @ARGV;
+    $pat ||= '';
+    $ENV{FZF_DEFAULT_COMMAND} = $fdc if $fdc;
+    my $cmd = "fzf -1 -q '$pat'";
+    $cmd .= " | awk '{print \$" . $col . "}'" if $col;
+
+    my @x;
+    @x = `$cmd`;
+    exit 1 if $?;
+    chomp(@x);
+    map { s/'/\\'/g; $_ = "'$_'" } @x if $ENV{QUOTE_NEEDED};
+    say for @x;
