@@ -7,6 +7,7 @@ use URI::Escape;
 use POSIX qw(setsid);
 
 my $UU = "ff";          # unsafe user; change this after reading below
+                        # must ALSO be the name of entry in ~/.ssh/config pointing to that user on localhost
 
 =for documentation
 
@@ -185,6 +186,10 @@ if ($ENV{USER} ne $UU) {
     my $prog = $0;
     $prog =~ s(.*/)();
     # $prog is now "libreoffice"
+
+    # 2022-06-18, well... maybe :)  We now also allow "jailer TOOL FILE" to
+    # allow jailing ad hoc tools (i.e., without symlinking them to jailer)
+    $prog = shift if $prog eq "jailer";
 
     # the filename is a bit more involved.  Consider the following examples:
     #   geeqie -r test.png

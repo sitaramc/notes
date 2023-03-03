@@ -1,28 +1,10 @@
 # a bit of paranoia
 
 I tend to be more than a little paranoid, so this is how my desktop is setup.
-Unix's standard user-separation is the core idea, but I also use firejail for
-the browsers and media players/viewers.  I assume privilege escalation from
-local user to root is not possible (and I keep a close watch for security
-announcements that might change that assumption -- they're rare but do
-happen!)
-
-----
-
-<!--ts-->
-   * [user-separation](#user-separation)
-      * [web browsing](#web-browsing)
-      * [email](#email)
-      * [documents and other non-text files](#documents-and-other-non-text-files)
-   * [other mechanisms](#other-mechanisms)
-      * [password management](#password-management)
-      * [mutt/thunderbird for gmail](#muttthunderbird-for-gmail)
-      * [qutebrowser versus firefox](#qutebrowser-versus-firefox)
-      * [firejail](#firejail)
-
-<!-- Added by: sitaram, at: Mon 07 Oct 2019 06:52:43 PM IST -->
-
-<!--te-->
+Unix's standard user-separation is the core idea.  I assume privilege
+escalation from local user to root is not possible (and I keep a close watch
+for security announcements that might change that assumption -- they're rare
+but do happen!)
 
 ----
 
@@ -30,109 +12,51 @@ happen!)
 
 I use 3 different userids on my desktop and laptop.
 
-*   `ff` is what I login to XFCE as.
-    *   no sudo permissions, not part of `wheel` group
-    *   audio works only on this userid
+-   `sitaram` is the main userid
+    -   no browser is ever run on this userid
+        -   not even trusted sites like my employer's portal or my bank.  The browser is set to a non-existant proxy to prevent even accidental use
+    -   thunderbird and mutt are used for email
+        -   thunderbird is set to a non-existent proxy and JS is disabled
+        -   for mutt, HTML parts are opened by `dillo` (very light and fast to open, no JS support), again set to a non-existent proxy
+    -   both have settings that force any attached files to open **in a different userid**
+        -   (see "mailcap" section later)
+    -   similarly, all binary format files (e.g., LibreOffice documents) are opened in the `ff` userid
+        -   (see "jailer" program later)
+    -   `sitaram` has keyed ssh access to `ff` (but not the other way around).
 
-*   `g3` started out as my "gitolite test" user, but it also does other
-    things; see below.
+-   `g3` to do all my gitolite testing in
+    -   this user also has some firefox profiles that are specific to various accounts (one for my secondary gmail account, one for my bank, and so on)
+    -   all web browsing to **important sites** (bank, for example) that requires a login, happens from this userid
+    -   any downloaded files (e.g., bank statements) have to be manually copied to `sitaram` (I just use `/tmp` as a holding area for this).
 
-*   `sitaram` is the highest privileged user.  All code that I write or my
-    teams' code that I have to review goes here.  Anything plain text can be
-    opened here, but all binary formats (libreoffice, PDF, jpg, ...) are
-    delegated to `ff`.
+-   `ff` for everything else
+    -   no sudo permissions, not part of `wheel` group
+    -   all ad hoc web browsing, RSS feeds, and useless sites like reddit are browsed from here
+        -   sites which have a login, have their own profiles
+    -   also, all movies and such are played in this userid
 
-    `sitaram` has keyed ssh access to `ff` (but not the other way around).
+# mailcap and jailer
 
-## web browsing
+The `ff` user handles attachments incoming from `sitaram` as described above.
+This is done by using a mailcap file, as well as the "application helper" in
+thunderbird, that point to this script:
 
-*   `ff`: almost all web browsing is done by this user
-    *   all routine, ad hoc, (i.e., untrusted) browsing
-    *   Javascript off unless I really need it.  Very few permanent
-        exceptions.
+    #!/bin/bash
+    # runs on 'sitaram' only; can be used as "application helper" in thunderbird etc
 
-    In addition, the browser runs under firejail (as do vlc, mpv, okular,
-    zathura, and geeqie -- various media handling software).
+    f="$1"
+    jailer xdg-open "$f"
 
-*   `g3`: trusted sites only
-    *   (example: my employer's company portal(s), my bank, github, gmail,
-        ...)
-    *   full private mode (nothing stored by the browser, ever)
-    *   one site at a time (close the browser and restart it in order to use a
-        different site)
-    *   any downloaded files (e.g., bank statements) have to be manually
-        copied to `sitaram` (I just use `/tmp` as a holding area for this).
+where `jailer` is a program that you will also find in this repo.  What
+`jailer` does is to copy the file to the ff user then invoke the program (in
+this example `xdg-open`) from the `ff` user.
 
-*   `sitaram`: no web browsing, not even trusted sites like my employer's
-    portal or my bank.  The browser is set to a non-existant proxy to prevent
-    even accidental use.
+The end result is, if I *do* open a malicious file that manages to *execute*
+something, unless the malware can directly jump to `root`, it can only see
+copies of a few files that I opened in the last hour or so of work.
 
-(Do I need to mention that Flash is not even installed?)
-
-## email
-
-*   `sitaram`: email is handled only by `sitaram`.  When an attachment is
-    opened, however, the handler (for pretty much everything except plain
-    text) is a script that copies the file to `ff` and runs it there, within
-    firejail.  It also arranges to delete the file after one hour.  (This is
-    all automatic, by the way).
-
-    URLs in emails are also handled the same way; I use a handler script that
-    sends the URL (via ssh) to `ff` to open.
-
-    Thunderbird is also set to a non-existent proxy, **and** Javascript
-    disabled.  For mutt, HTML parts are opened by `dillo` (very light and fast
-    to open, no JS support), which is also configured to a non-existent proxy.
-
-*   `ff`: handles attachments incoming from `sitaram` as described above.
-
-    The idea is, if I *do* open a malicious file that manages to *execute*
-    something, unless the malware can directly jump to `root`, it can only see
-    a few files (usually 2-4) that I opened in the last hour or so of work.
-    Plus, they are copies, so encrypting them (i.e., ransomware) won't lose me
-    anything.
-
-*   `g3` has very little role to play in email -- limited to the rare
-    occasions when I log on to gmail from an actual browser.
-
-## documents and other non-text files
-
-*   `ff`: all email attachments are sent here by `sitaram` to open.  These
-    files are stored on `/tmp` (not on disk) and are gone after 1 hour, even
-    if the application is still open.
-
-    If I want to make changes, I have to save it within the `ff` userid, then
-    have `sitaram` copy it over using `rsync` or `scp`.
-
-*   `g3`: no documents are opened here, though it does serve as a passthru for
-    files downloaded from the bank etc., or that need to be uploaded to
-    similar sites.
-
-*   `sitaram`: documents are all stored here, but never opened.  See "email"
-    above; I manually use the same script mentioned above so they open in
-    `ff`.
-
-# other mechanisms
-
-## password management
-
-I use [pass](https://www.passwordstore.org/) -- Jason Donenfeld's excellent
-gpg-based tool to handle passwords.
-
-Naturally, I have a custom script on top :-) that lets me do things more
-conveniently.  (For example, this script is called within my muttrc to set the
-IMAP password.)
-
-Many banks and other service providers send statements that are password
-protected, usually with some bullshit combination of 4 digits of this and 4
-letters of that and so on (and no two seem to be the same, making it a real
-pain!)  So I store all the possible passwords in `pass`, and, when I open an
-encrypted PDF in an email, the script that sends that attachement to `ff`
-(remmember that?) tries each of these passwords in turn until it succeeds, and
-sends the *decrypted* output to `ff`.
-
-(I also abuse pass to keep all sorts of ancillary information about each
-"account").
+If I want to make changes, I have to save it within the `ff` userid, then have
+`sitaram` copy it over using `rsync` or `scp`.
 
 ## mutt/thunderbird for gmail
 
@@ -154,45 +78,6 @@ This has several advantages:
     >   side note: disabling JS in TB requires going into the config editor;
     >   it's not in the menus.
 
--   you don't have to keep typing your password in the browser (which I would
-    have to if I used a browser to check gmail, because remember, the browser
-    session for "trusted sites" is one-site-at-a-time, and in
-    always-private-mode).
+-   you don't have to stay logged in at a browser (leading to various kinds of
+    privacy leaks)
 
-## qutebrowser versus firefox
-
-I kept saying "browser" up above, but I did not say which one it was.  For
-`g3` it's always firefox.  For `ff`, it's `qutebrowser` by default, and only
-if the site does not render in qb, **and** I really want to see it, I'll open
-it in firefox.
-
-`qutebrowser` has a lot of advantages over firefox for `vim` people.  Firefox,
-due to their mishandling of the add-on API, seem to constantly force you to
-drop the most useful extensions (this rot has spread to TB also now, by the
-way!).  The best extension I ever used and always need is "vimperator" --
-well, qb is essentially the same functionality, wrapped in a completely
-different package.
-
-`qutebrowser` also makes it trivial to disable JS by default, and enable it
-only when needed.  All without any extensions or add-ons.
-
-Finally, it has a bloody good help system and auto-complete for its internal
-features, though you'll use it less and less as time goes and your config
-stabilises.
-
-## firejail
-
-Firejail is very nice, if a little inconvenient when you have custom scripts
-and they need to be whitelisted etc.  Still, it's well worth it, especially to
-deny network access to, say, a local image or PDF viewer.  I have a wrapper
-script that encapsulates my most commonly used options.  Also, by default
-firefox, qutebrowser, mpv, vlc, geeqie, okular, and zathura are run under
-firejail (basically symlink `/usr/bin/firejail` to, for example,
-`/usr/local/bin/firefox`, and so on).
-
-One tip: if you want to use additional files and/or programs, put them within
-the config directory for the most seamless experience.  For example, my
-qutebrowser config has a keyboard shortcut to send youtube URLs to `mpv` over
-a fifo.  Until I realised it's simplest to put that fifo in `~/.config/mpv`, I
-had a heck of a time trying to get mpv within firejail to be able to "see"
-that fifo!
