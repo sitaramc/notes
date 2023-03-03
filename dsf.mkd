@@ -1,21 +1,32 @@
 # dsf -- directory specific functions
 
-I often have functions that pertain to a specific project, and I don't want to pollute my main `.zshrc` or `.bashrc` with these functions.
+# TLDR
 
-This script helps me with that.
+I often have functions that pertain to a specific project, and I don't want to pollute my main `.zshrc` or `.bashrc` with these functions.  I also cannot always remember the exact names.
 
-It merely looks in the current directory, and all the way up to `$HOME` for files called `.__`, and sources them in order.  These files are expected to contain shell functions.  After sourcing all of them it executes the arguments (arg-1 is presumably the name of a shell function to invoke).
+The `dsf` command and the helper function (`cue`) help me with that.
+
+Running `cue` gives me a fuzzy search on various rarely used (and thus hard to remember) shell functions -- both global functions as well as functions pertaining only to the current directory and its children.  Under the covers it calls `dsf`.
+
+----
+
+## the `dsf` command
+
+`dsf` merely looks in the current directory, and all the way up to `$HOME` for files called `.__`, and sources them in order.  These files are expected to contain shell functions.  After sourcing all of them it executes the arguments (arg-1 is presumably the name of a shell function to invoke).
 
 (For security reasons, if `$PWD` is not under `$HOME`, *only* the file in `$HOME` is sourced, nothing else.  So if you're in `/tmp` it won't source `/tmp/.__` even if it is present).
 
 So for example if you had the following in one of those `.__` files:
 
+    ## pub FILE         # publish given file to "server"'s docroot
     pub() {
-        git push ...
-        git archive HEAD | ssh ... tar -C ... -xvf -
+        scp $1 server:/var/www/html/$1
+        ssh server chmod a+r /var/www/html/$1
     }
 
-you'd run `pub` to publish the contents using the commands given, and it would only run from within this directory or its subdirectories.
+you'd run `pub foo.txt` to publish the file `foo.txt` to your server's docroot, and this command would only run from within this directory or its subdirectories.
+
+## the "command not found" handler
 
 **TIP** I also have (in zsh):
 
@@ -26,21 +37,37 @@ you'd run `pub` to publish the contents using the commands given, and it would o
 
 so I can just type these functions directly in zsh.  For bash, the function name is `command_not_found_handle` if you want to do the same thing.
 
-Finally, it has a simple "list" capability to remind you of the functions available.  If you add comments with the following pattern:
+## dsf's help function
 
-    # (group) function: some description or usage
+Finally, it has a simple "help" capability to remind you of the functions available.  If you add comments with the following pattern:
 
-then running `list` without any arguments will list all these lines, and running `list pattern` will show them but highlight the pattern in the output.
+    ## command args             # some description
 
-If it helps you understand how this looks, this is what I get when I am in root and type `list` on a machine that is running Ubuntu:
+then running `dsf` without any arguments will list all these lines.
 
-    # (pac) aptlg: apt list | grep $1
-    # (pac) apti: apt info
-    # (pac) aptI: apt install
-    # (load) cpu: cpulimit new task or PID.  E.g., cpu 10 foo, or cpu 10 `pidof foo`
-    # (net) iwsc: list SSIDs from iwlist scan of available APs
-    # (net) nms: network status including wifi
-    # (net) wifi0: wifi off
-    # (net) wifi1: wifi on
-    # (net) myap: nmcli dev wifi connect my_home_AP
-    # (net) myhs: nmcli dev wifi connect my_phone_hotspot_AP
+Here's a selected subset of what I see (though some of them only appear in root):
+
+    nmcli dev wifi connect hw    # homewifi; hit tab before hitting enter!
+    nmcli dev wifi connect hs    # phone hostspot; hit tab before hitting enter!
+    nms_detailed_report          # more than one page
+    wifi 0                       # wifi off
+    wifi 1                       # wifi on
+    sst                          # search for "STATUS" messages in journal
+    lsb [2]                      # "lsb" or "lsb 2" -- run lsblk with useful options
+    fix_touchpad                 # fix random hid_multitouch issues on second laptop
+    xb                           # temp browser, no URL
+    xbp                          # temp browser, pick from xsel, xsel-b, corp-portal, bank
+    find_country IP              # using whois.cymru.com; output contains AS number/name, BGP prefix, CC, registray, allocated date
+    prefix_date filelist         # use stat -c %y to get the date and prefix it
+    croc_client CODE file        # one codeword and one filename
+
+## the `cue` command
+
+This is front-ended by the following shell function, which helps me fuzzy search for the function I want, whose exact name I may have forgotten:
+
+    cue () {
+        c="$(dsf | fzf --no-multi -1 -q "${1:-}" | sed -e 's/ *#.*//')" 
+        print -z "$c"
+    }
+
+The `print -z` makes it look as if *you* typed the resulting text -- you can simply hit enter, or edit the line before running it.  Sadly this only works in `zsh`; I'm sure there's a way to do this in bash but I have not found it yet.

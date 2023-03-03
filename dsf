@@ -4,7 +4,7 @@
 #
 # TL;DR
 #   -   add a file called ".__" containing shell functions in some directory
-#   -   those functions are not available only in that directory and below
+#   -   those functions are now available only in that directory and below
 #
 # for more, see "dsf.mkd" in the same place you found this file, probably https://github.com/sitaramc/notes/blob/master/dsf.mkd
 
@@ -20,14 +20,15 @@ __files() (
         [[ -f $PWD/.__ ]] && echo $PWD/.__
         cd ..
     done
-    echo $HOME/.__
+    [[ -f $HOME/.__ ]] && echo $HOME/.__
+    [[ -f /etc/.__  ]] && echo /etc/.__
 )
 
-# deal with listing available functions
-[[ -z "${1:-}" ]] && set -- list
-list() {
+# deal with help
+[[ -z "${1:-}" ]] && set -- help
+help() {
     cat `__files` |
-        grep -E '^# \(\S+\)' | grep --color -e $ -e ${1:-dummy}
+        grep -E '^## ' | cut -c4-
 }
 die() { echo >&2 "$@"; exit 1; }
 
